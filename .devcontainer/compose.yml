@@ -1,0 +1,47 @@
+# Reference: https://docs.docker.com/reference/compose-file/
+name: minichat-dev
+
+x-scylla-default: &scylla-default
+  healthcheck:
+    test: cqlsh -e "DESCRIBE CLUSTER"
+    interval: 5s
+    timeout: 5s
+    retries: 10
+    start_period: 15s
+  image: scylladb/scylla:6.2
+  mem_limit: 1gb
+  command:
+    - --overprovisioned=1
+    - --reactor-backend=epoll
+    - --seeds=scylla1,scylla2,scylla3
+    - --smp=1
+
+services:
+  scylla1:
+    container_name: scylla1
+    hostname: scylla1
+    <<: *scylla-default
+
+  scylla2:
+    container_name: scylla2
+    hostname: scylla2
+    <<: *scylla-default
+
+  scylla3:
+    container_name: scylla3
+    hostname: scylla3
+    <<: *scylla-default
+
+  devcontainer:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    container_name: devcontainer
+    extra_hosts:
+      data-service: "127.0.0.1"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ..:/workspace
+    command: bash -c "services/api/scripts/compile.sh && sleep infinity"
+    working_dir: /workspace

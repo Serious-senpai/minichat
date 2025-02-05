@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+import "scalar.proto";
+
+package config_proto;
+
+service ConfigService {
+    rpc StringConfig(ConfigRequestMessage) returns (scalar_proto.StringMessage);
+}
+
+message ConfigRequestMessage {
+    ConfigType config_type = 1;
+}
+
+enum ConfigType {
+    SECRET_KEY = 0;
+}

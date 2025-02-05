@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package status_proto;
+
+message StatusMessage {
+    bool success = 1;
+    string message = 2;
+}

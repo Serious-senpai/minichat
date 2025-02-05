@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package scalar_proto;
+
+message Int64Message {
+    int64 value = 1;
+}
+
+message StringMessage {
+    string value = 1;
+}

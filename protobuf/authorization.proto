@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+import "status.proto";
+
+package authorization_proto;
+
+service AccountService {
+    rpc Create(InfoMessage) returns (status_proto.StatusMessage);
+    rpc Login(InfoMessage) returns (AccountMessage);
+}
+
+message InfoMessage {
+    string username = 1;
+    string password = 2;
+}
+
+message AccountMessage {
+    int64 id = 1;
+    string username = 2;
+    int64 permissions = 3;
+}

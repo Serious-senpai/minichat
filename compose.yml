@@ -1,0 +1,64 @@
+# Reference: https://docs.docker.com/reference/compose-file/
+name: minichat
+
+x-scylla-default: &scylla-default
+  healthcheck:
+    test: cqlsh -e "DESCRIBE CLUSTER"
+    interval: 5s
+    timeout: 5s
+    retries: 10
+    start_period: 15s
+  image: scylladb/scylla:6.2
+  mem_limit: 1gb
+  command:
+    - --overprovisioned=1
+    - --reactor-backend=epoll
+    - --seeds=scylla1,scylla2,scylla3
+    - --smp=1
+
+services:
+  scylla1:
+    container_name: scylla1
+    hostname: scylla1
+    <<: *scylla-default
+
+  scylla2:
+    container_name: scylla2
+    hostname: scylla2
+    <<: *scylla-default
+
+  scylla3:
+    container_name: scylla3
+    hostname: scylla3
+    <<: *scylla-default
+
+  scylla4:
+    container_name: scylla4
+    hostname: scylla4
+    <<: *scylla-default
+
+  data-service:
+    build:
+      context: .
+      dockerfile: services/data/Dockerfile
+    container_name: data-service
+    hostname: data-service
+    depends_on:
+      scylla1:
+        condition: service_healthy
+      scylla2:
+        condition: service_healthy
+      scylla3:
+        condition: service_healthy
+      scylla4:
+        condition: service_healthy
+
+  api-service:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    container_name: api-service
+    depends_on:
+      - data-service
+    ports:
+      - "8000:8000"
