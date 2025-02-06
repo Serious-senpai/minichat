@@ -24,5 +24,6 @@
     },
     "dockerComposeFile": "compose.yml",
     "service": "devcontainer",
-    "workspaceFolder": "/workspace"
+    "workspaceFolder": "/workspace",
+    "onCreateCommand": "if [ ! -d /workspace/.git ]; then git clone https://github.com/${GITHUB_REPOSITORY} /workspace; fi"
 }

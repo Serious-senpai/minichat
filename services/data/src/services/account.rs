@@ -17,6 +17,7 @@ static _STATEMENTS: sync::OnceCell<Statements> = sync::OnceCell::const_new();
 struct Statements {
     account_create_1: prepared_statement::PreparedStatement,
     account_create_2: prepared_statement::PreparedStatement,
+    account_create_3: prepared_statement::PreparedStatement,
     account_login: prepared_statement::PreparedStatement,
 }
 
@@ -45,9 +46,9 @@ struct InsertAccountRow {
 /// This function is automatically called by [`sync::OnceCell`], a reference to
 /// [`_STATEMENTS`] can be retrieved via:
 /// ```rust
-/// let statements = _STATEMENTS.get_or_try_init(|| prepare(session)).await?;
+/// let statements = _STATEMENTS.get_or_try_init(|| _prepare(session)).await?;
 /// ```
-async fn prepare(session: &scylla::Session) -> Result<Statements, Box<dyn std::error::Error>> {
+async fn _prepare(session: &scylla::Session) -> Result<Statements, Box<dyn std::error::Error>> {
     let mut account_create_1 = session
         .prepare(
             r"
@@ -70,6 +71,17 @@ async fn prepare(session: &scylla::Session) -> Result<Statements, Box<dyn std::e
         .await?;
     account_create_2.set_consistency(Consistency::All);
 
+    let mut account_create_3 = session
+        .prepare(
+            r"
+            UPDATE accounts.info_by_username
+            SET id = ?
+            WHERE username = ?
+            ",
+        )
+        .await?;
+    account_create_3.set_consistency(Consistency::All);
+
     let mut account_login = session
         .prepare(
             r"
@@ -84,8 +96,28 @@ async fn prepare(session: &scylla::Session) -> Result<Statements, Box<dyn std::e
     Ok(Statements {
         account_create_1,
         account_create_2,
+        account_create_3,
         account_login,
     })
+}
+
+async fn _create_helper(
+    service: &super::ApplicationService,
+    id: &i64,
+    statement: &prepared_statement::PreparedStatement,
+    username: &str,
+    hashed_password: &str,
+) -> Result<bool, tonic::Status> {
+    Ok(service
+        .session
+        .execute_unpaged(&statement.clone(), (&id, username, hashed_password))
+        .await
+        .map_err(super::ApplicationService::error)?
+        .into_rows_result()
+        .map_err(super::ApplicationService::error)?
+        .single_row::<InsertAccountRow>()
+        .map_err(super::ApplicationService::error)?
+        .applied)
 }
 
 #[tonic::async_trait]
@@ -96,38 +128,72 @@ impl account_service_server::AccountService for super::ApplicationService {
     ) -> Result<tonic::Response<status_proto::StatusMessage>, tonic::Status> {
         let message = request.into_inner();
         let statements = _STATEMENTS
-            .get_or_try_init(|| prepare(&self.session))
+            .get_or_try_init(|| _prepare(&self.session))
             .await
             .map_err(super::ApplicationService::error)?;
 
         let id = self.generate_id();
         let hashed_password = self.hash(&message.password);
+        let hashed_password = &hashed_password;
 
-        let try_insert = |statement: &'static prepared_statement::PreparedStatement| async {
-            Ok::<bool, tonic::Status>(
-                self.session
-                    .execute_unpaged(
-                        &statement.clone(),
-                        (&id, &message.username, &hashed_password),
-                    )
-                    .await
-                    .map_err(super::ApplicationService::error)?
-                    .into_rows_result()
-                    .map_err(super::ApplicationService::error)?
-                    .single_row::<InsertAccountRow>()
-                    .map_err(super::ApplicationService::error)?
-                    .applied,
-            )
-        };
-
-        if try_insert(&statements.account_create_1).await?
-            && try_insert(&statements.account_create_2).await?
-        {
-            Ok(tonic::Response::new(status_proto::StatusMessage {
+        let success = Ok::<tonic::Response<status_proto::StatusMessage>, tonic::Status>(
+            tonic::Response::new(status_proto::StatusMessage {
                 success: true,
                 message: "Created a new account".to_string(),
-            }))
+            }),
+        );
+
+        if _create_helper(
+            self,
+            &id,
+            &statements.account_create_1,
+            &message.username,
+            hashed_password,
+        )
+        .await?
+        {
+            // Username is unique, insert into the second table
+            if _create_helper(
+                self,
+                &id,
+                &statements.account_create_2,
+                &message.username,
+                hashed_password,
+            )
+            .await?
+            {
+                // ID is unique
+                success
+            } else {
+                // ID already exists (this is very unlikely, but may happen during extremely high concurrency scenarios).
+                // In this case, we repeatedly generate a new ID and try inserting.
+                let mut id = self.generate_id();
+                loop {
+                    if _create_helper(
+                        self,
+                        &id,
+                        &statements.account_create_2,
+                        &message.username,
+                        hashed_password,
+                    )
+                    .await?
+                    {
+                        break;
+                    }
+
+                    id = self.generate_id();
+                }
+
+                // At this point, the ID inserted to the second table is guaranteed to be unique.
+                // We now update the first table.
+                self.session
+                    .execute_unpaged(&statements.account_create_3, (id, &message.username))
+                    .await
+                    .map_err(super::ApplicationService::error)?;
+                success
+            }
         } else {
+            // Username already exists
             Err(tonic::Status::already_exists("Username already exists"))
         }
     }
@@ -138,7 +204,7 @@ impl account_service_server::AccountService for super::ApplicationService {
     ) -> Result<tonic::Response<authorization_proto::AccountMessage>, tonic::Status> {
         let message = request.into_inner();
         let statements = _STATEMENTS
-            .get_or_try_init(|| prepare(&self.session))
+            .get_or_try_init(|| _prepare(&self.session))
             .await
             .map_err(super::ApplicationService::error)?;
 
