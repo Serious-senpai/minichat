@@ -10,14 +10,14 @@
                 "zxh404.vscode-proto3"
             ],
             "settings": {
-                "autopep8.cwd": "./services/api",
+                "autopep8.cwd": "${containerWorkspaceFolder}/services/api",
                 "editor.formatOnSave": true,
                 "extensions.ignoreRecommendations": false,
                 "git.autorefresh": true,
                 "mypy-type-checker.preferDaemon": false,
                 "python.defaultInterpreterPath": "/venv/bin/python",
                 "rust-analyzer.linkedProjects": [
-                    "./services/data/Cargo.toml"
+                    "${containerWorkspaceFolder}/services/data/Cargo.toml"
                 ]
             }
         }
