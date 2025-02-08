@@ -38,7 +38,7 @@ async def create(
     stub = authorization_pb2_grpc.AccountServiceStub(channel)
     try:
         result = await stub.Create(
-            authorization_pb2.InfoMessage(
+            authorization_pb2.PAuthInfo(
                 username=headers.username,
                 password=headers.password,
             )
@@ -70,7 +70,7 @@ async def token(form: Annotated[OAuth2PasswordRequestForm, fastapi.Depends()]) -
     stub = authorization_pb2_grpc.AccountServiceStub(channel)
     try:
         result = await stub.Login(
-            authorization_pb2.InfoMessage(
+            authorization_pb2.PAuthInfo(
                 username=form.username,
                 password=form.password,
             )

@@ -1,29 +1,32 @@
+use std::sync::Arc;
+
 use scylla::macros;
 use scylla::prepared_statement;
 use scylla::statement::Consistency;
 use tokio::sync;
 
-use super::authorization_proto;
-use super::authorization_proto::account_service_server;
-use super::status_proto;
+use super::p_authorization;
+use super::p_authorization::account_service_server;
+use super::p_status;
+use super::p_users;
 
-/// A singleton of [`Statements`], initialized using [`sync::OnceCell`]
-static _STATEMENTS: sync::OnceCell<Statements> = sync::OnceCell::const_new();
+/// A singleton of [`_Statements`], initialized using [`sync::OnceCell`]
+static _STATEMENTS: sync::OnceCell<_Statements> = sync::OnceCell::const_new();
 
 /// Private struct holding prepared statements in this module.
 ///
 /// Access the underlying statements via the singleton [`_STATEMENTS`].
-/// See also: [`prepare`].
-struct Statements {
-    account_create_1: prepared_statement::PreparedStatement,
-    account_create_2: prepared_statement::PreparedStatement,
-    account_create_3: prepared_statement::PreparedStatement,
-    account_login: prepared_statement::PreparedStatement,
+/// See also: [`_prepare`].
+struct _Statements {
+    create1: prepared_statement::PreparedStatement,
+    create2: prepared_statement::PreparedStatement,
+    create3: prepared_statement::PreparedStatement,
+    login: prepared_statement::PreparedStatement,
 }
 
 #[allow(dead_code)]
 #[derive(Debug, macros::DeserializeRow)]
-struct AccountRow {
+struct _AccountRow {
     id: i64,
     username: String,
     hashed_password: String,
@@ -32,7 +35,7 @@ struct AccountRow {
 
 #[allow(dead_code)]
 #[derive(Debug, macros::DeserializeRow)]
-struct InsertAccountRow {
+struct _InsertAccountRow {
     #[scylla(rename = "[applied]")]
     applied: bool,
     id: Option<i64>,
@@ -41,63 +44,57 @@ struct InsertAccountRow {
     permissions: Option<i64>,
 }
 
-/// Constructs a [`Statements`] to initialize the singleton [`_STATEMENTS`].
+/// Constructs a [`_Statements`] to initialize the singleton [`_STATEMENTS`].
 ///
 /// This function is automatically called by [`sync::OnceCell`], a reference to
 /// [`_STATEMENTS`] can be retrieved via:
 /// ```rust
 /// let statements = _STATEMENTS.get_or_try_init(|| _prepare(session)).await?;
 /// ```
-async fn _prepare(session: &scylla::Session) -> Result<Statements, Box<dyn std::error::Error>> {
-    let mut account_create_1 = session
+async fn _prepare(
+    session: Arc<scylla::Session>,
+) -> Result<_Statements, Box<dyn std::error::Error>> {
+    let mut create1 = session
         .prepare(
-            r"
-            INSERT INTO accounts.info_by_username (id, username, hashed_password, permissions)
+            r"INSERT INTO accounts.info_by_username (id, username, hashed_password, permissions)
             VALUES (?, ?, ?, 0)
-            IF NOT EXISTS
-            ",
+            IF NOT EXISTS",
         )
         .await?;
-    account_create_1.set_consistency(Consistency::All);
+    create1.set_consistency(Consistency::All);
 
-    let mut account_create_2 = session
+    let mut create2 = session
         .prepare(
-            r"
-            INSERT INTO accounts.info_by_id (id, username, hashed_password, permissions)
+            r"INSERT INTO accounts.info_by_id (id, username, hashed_password, permissions)
             VALUES (?, ?, ?, 0)
-            IF NOT EXISTS
-            ",
+            IF NOT EXISTS",
         )
         .await?;
-    account_create_2.set_consistency(Consistency::All);
+    create2.set_consistency(Consistency::All);
 
-    let mut account_create_3 = session
+    let mut create3 = session
         .prepare(
-            r"
-            UPDATE accounts.info_by_username
+            r"UPDATE accounts.info_by_username
             SET id = ?
-            WHERE username = ?
-            ",
+            WHERE username = ?",
         )
         .await?;
-    account_create_3.set_consistency(Consistency::All);
+    create3.set_consistency(Consistency::All);
 
-    let mut account_login = session
+    let mut login = session
         .prepare(
-            r"
-            SELECT id, username, hashed_password, permissions
+            r"SELECT id, username, hashed_password, permissions
             FROM accounts.info_by_username
-            WHERE username = ?
-            ",
+            WHERE username = ?",
         )
         .await?;
-    account_login.set_consistency(Consistency::All);
+    login.set_consistency(Consistency::All);
 
-    Ok(Statements {
-        account_create_1,
-        account_create_2,
-        account_create_3,
-        account_login,
+    Ok(_Statements {
+        create1,
+        create2,
+        create3,
+        login,
     })
 }
 
@@ -115,7 +112,7 @@ async fn _create_helper(
         .map_err(super::ApplicationService::error)?
         .into_rows_result()
         .map_err(super::ApplicationService::error)?
-        .single_row::<InsertAccountRow>()
+        .single_row::<_InsertAccountRow>()
         .map_err(super::ApplicationService::error)?
         .applied)
 }
@@ -124,11 +121,11 @@ async fn _create_helper(
 impl account_service_server::AccountService for super::ApplicationService {
     async fn create(
         &self,
-        request: tonic::Request<authorization_proto::InfoMessage>,
-    ) -> Result<tonic::Response<status_proto::StatusMessage>, tonic::Status> {
+        request: tonic::Request<p_authorization::PAuthInfo>,
+    ) -> Result<tonic::Response<p_status::PStatus>, tonic::Status> {
         let message = request.into_inner();
         let statements = _STATEMENTS
-            .get_or_try_init(|| _prepare(&self.session))
+            .get_or_try_init(|| _prepare(self.session.clone()))
             .await
             .map_err(super::ApplicationService::error)?;
 
@@ -136,8 +133,8 @@ impl account_service_server::AccountService for super::ApplicationService {
         let hashed_password = self.hash(&message.password);
         let hashed_password = &hashed_password;
 
-        let success = Ok::<tonic::Response<status_proto::StatusMessage>, tonic::Status>(
-            tonic::Response::new(status_proto::StatusMessage {
+        let success = Ok::<tonic::Response<p_status::PStatus>, tonic::Status>(
+            tonic::Response::new(p_status::PStatus {
                 success: true,
                 message: "Created a new account".to_string(),
             }),
@@ -146,7 +143,7 @@ impl account_service_server::AccountService for super::ApplicationService {
         if _create_helper(
             self,
             &id,
-            &statements.account_create_1,
+            &statements.create1,
             &message.username,
             hashed_password,
         )
@@ -156,7 +153,7 @@ impl account_service_server::AccountService for super::ApplicationService {
             if _create_helper(
                 self,
                 &id,
-                &statements.account_create_2,
+                &statements.create2,
                 &message.username,
                 hashed_password,
             )
@@ -172,7 +169,7 @@ impl account_service_server::AccountService for super::ApplicationService {
                     if _create_helper(
                         self,
                         &id,
-                        &statements.account_create_2,
+                        &statements.create2,
                         &message.username,
                         hashed_password,
                     )
@@ -187,7 +184,7 @@ impl account_service_server::AccountService for super::ApplicationService {
                 // At this point, the ID inserted to the second table is guaranteed to be unique.
                 // We now update the first table.
                 self.session
-                    .execute_unpaged(&statements.account_create_3, (id, &message.username))
+                    .execute_unpaged(&statements.create3, (id, &message.username))
                     .await
                     .map_err(super::ApplicationService::error)?;
                 success
@@ -200,26 +197,26 @@ impl account_service_server::AccountService for super::ApplicationService {
 
     async fn login(
         &self,
-        request: tonic::Request<authorization_proto::InfoMessage>,
-    ) -> Result<tonic::Response<authorization_proto::AccountMessage>, tonic::Status> {
+        request: tonic::Request<p_authorization::PAuthInfo>,
+    ) -> Result<tonic::Response<p_users::PUser>, tonic::Status> {
         let message = request.into_inner();
         let statements = _STATEMENTS
-            .get_or_try_init(|| _prepare(&self.session))
+            .get_or_try_init(|| _prepare(self.session.clone()))
             .await
             .map_err(super::ApplicationService::error)?;
 
         let row = self
             .session
-            .execute_unpaged(&statements.account_login, (&message.username,))
+            .execute_unpaged(&statements.login, (&message.username,))
             .await
             .map_err(super::ApplicationService::error)?
             .into_rows_result()
             .map_err(super::ApplicationService::error)?
-            .single_row::<AccountRow>()
+            .single_row::<_AccountRow>()
             .map_err(|_| tonic::Status::unauthenticated("Invalid credentials"))?;
 
         if self.verify(&message.password, &row.hashed_password) {
-            Ok(tonic::Response::new(authorization_proto::AccountMessage {
+            Ok(tonic::Response::new(p_users::PUser {
                 id: row.id,
                 username: row.username,
                 permissions: row.permissions,

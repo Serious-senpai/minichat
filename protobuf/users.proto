@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package p_users;
+
+message PUser {
+    int64 id = 1;
+    string username = 2;
+    int64 permissions = 3;
+}

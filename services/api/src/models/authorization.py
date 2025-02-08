@@ -9,7 +9,7 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
 from ..core import ConfigClient, JWT_ALGORITHM, TOKEN_EXPIRATION_MINUTES
-from ..proto import authorization_pb2
+from ..proto import users_pb2
 
 
 __all__ = ("Account", "AccountToken")
@@ -21,7 +21,7 @@ class Account(pydantic.BaseModel):
     permissions: int
 
     @classmethod
-    def from_proto(cls, message: authorization_pb2.AccountMessage) -> Account:
+    def from_proto(cls, message: users_pb2.PUser) -> Account:
         return cls(
             id=message.id,
             username=message.username,

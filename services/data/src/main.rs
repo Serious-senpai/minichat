@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use tonic::transport::Server;
 
-use crate::services::authorization_proto::account_service_server;
-use crate::services::config_proto::config_service_server;
+use crate::services::p_authorization::account_service_server;
+use crate::services::p_config::config_service_server;
 
 mod services;
 

@@ -1,17 +1,17 @@
 syntax = "proto3";
 
-import "scalar.proto";
+import "google/protobuf/wrappers.proto";
 
-package config_proto;
+package p_config;
 
 service ConfigService {
-    rpc StringConfig(ConfigRequestMessage) returns (scalar_proto.StringMessage);
+    rpc StringConfig(PConfigRequest) returns (google.protobuf.StringValue);
 }
 
-message ConfigRequestMessage {
-    ConfigType config_type = 1;
+message PConfigRequest {
+    PConfigType config_type = 1;
 }
 
-enum ConfigType {
+enum PConfigType {
     SECRET_KEY = 0;
 }

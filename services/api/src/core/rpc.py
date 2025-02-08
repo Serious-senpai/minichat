@@ -46,5 +46,5 @@ class ConfigClient:
 
     async def secret_key(self) -> str:
         s = await self.stub()
-        m = await s.StringConfig(config_pb2.ConfigRequestMessage(config_type=config_pb2.ConfigType.SECRET_KEY))
+        m = await s.StringConfig(config_pb2.PConfigRequest(config_type=config_pb2.PConfigType.SECRET_KEY))
         return m.value

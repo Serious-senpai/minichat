@@ -13,7 +13,7 @@ class Status(pydantic.BaseModel):
     message: str
 
     @classmethod
-    def from_proto(cls, message: status_pb2.StatusMessage) -> Status:
+    def from_proto(cls, message: status_pb2.PStatus) -> Status:
         return cls(
             success=message.success,
             message=message.message,

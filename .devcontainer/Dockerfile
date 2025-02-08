@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     python3-venv
-RUN curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- -y
+RUN curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=1.84 -y
 
 COPY services/api /tmp/api-service
 RUN bash /tmp/api-service/scripts/install.sh

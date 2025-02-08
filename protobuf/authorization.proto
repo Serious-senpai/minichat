@@ -1,21 +1,16 @@
 syntax = "proto3";
 
 import "status.proto";
+import "users.proto";
 
-package authorization_proto;
+package p_authorization;
 
 service AccountService {
-    rpc Create(InfoMessage) returns (status_proto.StatusMessage);
-    rpc Login(InfoMessage) returns (AccountMessage);
+    rpc Create(PAuthInfo) returns (p_status.PStatus);
+    rpc Login(PAuthInfo) returns (p_users.PUser);
 }
 
-message InfoMessage {
+message PAuthInfo {
     string username = 1;
     string password = 2;
-}
-
-message AccountMessage {
-    int64 id = 1;
-    string username = 2;
-    int64 permissions = 3;
 }

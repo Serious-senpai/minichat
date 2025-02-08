@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+import "users.proto";
+
+package p_channels;
+
+service ChannelService {
+    rpc Query(google.protobuf.Empty) returns (PChannelQueryResult);
+    rpc History(PHistoryQuery) returns (PHistoryQueryResult);
+}
+
+message PChannel {
+    int64 id = 1;
+    string name = 2;
+    string description = 3;
+    p_users.PUser owner = 4;
+}
+
+message PMessage {
+    int64 id = 1;
+    string content = 2;
+    p_users.PUser author = 3;
+    PChannel channel = 4;
+}
+
+message PChannelQueryResult {
+    repeated PChannel channels = 1;
+}
+
+message PHistoryQuery {
+    /** ID of the channel to query history */
+    int64 id = 1;
+
+    /** Whether to return the newest messages first */
+    bool newest = 2;
+
+    /** Query snowflake ID smaller or equal to this ID */
+    optional int64 before_id = 3;
+
+    /** Query snowflake ID larger or equal to this ID */
+    optional int64 after_id = 4;
+
+    /** Maximum number of messages to return */
+    int32 limit = 50;
+}
+
+message PHistoryQueryResult {
+    repeated PMessage messages = 1;
+}

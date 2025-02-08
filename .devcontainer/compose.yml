@@ -42,6 +42,6 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ..:/workspace
+      - ..:/workspaces/minichat
     command: bash -c "services/api/scripts/compile.sh && sleep infinity"
-    working_dir: /workspace
+    working_dir: /workspaces/minichat

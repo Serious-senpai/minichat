@@ -15,6 +15,11 @@
                 "extensions.ignoreRecommendations": false,
                 "git.autorefresh": true,
                 "mypy-type-checker.preferDaemon": false,
+                "protoc": {
+                    "options": [
+                        "--proto_path=${containerWorkspaceFolder}/proto"
+                    ]
+                },
                 "python.defaultInterpreterPath": "/venv/bin/python",
                 "rust-analyzer.linkedProjects": [
                     "${containerWorkspaceFolder}/services/data/Cargo.toml"
@@ -24,6 +29,5 @@
     },
     "dockerComposeFile": "compose.yml",
     "service": "devcontainer",
-    "workspaceFolder": "/workspace",
-    "onCreateCommand": "if [ ! -d /workspace/.git ]; then git clone https://github.com/${GITHUB_REPOSITORY} /workspace; fi"
+    "workspaceFolder": "/workspaces/minichat"
 }
