@@ -1,8 +1,9 @@
 # Reference: https://docs.docker.com/reference/dockerfile/
-FROM ubuntu:22.04
+FROM python:3.12.9-alpine AS runner
 
-RUN apt-get update && apt-get install python-is-python3 python3 python3-pip python3-venv -y
+RUN apk add bash
 
+# Delay COPY operation as much as possible to avoid cache invalidation: https://stackoverflow.com/a/48553814
 COPY . /app
 
 WORKDIR /app/services/api

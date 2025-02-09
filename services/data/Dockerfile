@@ -1,5 +1,5 @@
 # Reference: https://docs.docker.com/reference/dockerfile/
-FROM rust:1.84-bookworm AS builder
+FROM rust:1.84 AS builder
 
 RUN apt-get update && apt-get install -y protobuf-compiler
 
@@ -7,11 +7,9 @@ RUN apt-get update && apt-get install -y protobuf-compiler
 COPY . /app
 
 WORKDIR /app/services/data
-RUN cargo build --release
+RUN rm -rf target && cargo build --release
 
-FROM ubuntu:22.04 AS runner
-
-RUN apt-get update
+FROM rust:1.84-slim AS runner
 
 WORKDIR /app
 COPY --from=builder /app/services/data/target/release/data .

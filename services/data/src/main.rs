@@ -13,7 +13,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Use a single database session for all services
     let session = Arc::new(
         scylla::SessionBuilder::new()
-            .known_nodes(["scylla1", "scylla2", "scylla3"])
+            .known_nodes(["minichat-scylla-1", "minichat-scylla-2", "minichat-scylla-3"])
             .build()
             .await?,
     );

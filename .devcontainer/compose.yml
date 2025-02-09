@@ -1,36 +1,24 @@
 # Reference: https://docs.docker.com/reference/compose-file/
 name: minichat-dev
 
-x-scylla-default: &scylla-default
-  healthcheck:
-    test: cqlsh -e "DESCRIBE CLUSTER"
-    interval: 5s
-    timeout: 5s
-    retries: 10
-    start_period: 15s
-  image: scylladb/scylla:6.2
-  mem_limit: 1gb
-  command:
-    - --overprovisioned=1
-    - --reactor-backend=epoll
-    - --seeds=scylla1,scylla2,scylla3
-    - --smp=1
-
 services:
-  scylla1:
-    container_name: scylla1
-    hostname: scylla1
-    <<: *scylla-default
-
-  scylla2:
-    container_name: scylla2
-    hostname: scylla2
-    <<: *scylla-default
-
-  scylla3:
-    container_name: scylla3
-    hostname: scylla3
-    <<: *scylla-default
+  scylla:
+    command:
+      - --overprovisioned=1
+      - --reactor-backend=epoll
+      - --seeds=scylla1,scylla2,scylla3
+      - --smp=1
+    deploy:
+      replicas: 4
+    healthcheck:
+      test: cqlsh -e "DESCRIBE CLUSTER"
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+    # hostname: scylla  # Hostnames for replicas: {project name}-api-service-{replica number}, see [http.upstream] in services/api-proxy/nginx.conf
+    image: scylladb/scylla:6.2
+    mem_limit: 1gb
 
   devcontainer:
     build:

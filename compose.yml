@@ -1,64 +1,50 @@
 # Reference: https://docs.docker.com/reference/compose-file/
 name: minichat
 
-x-scylla-default: &scylla-default
-  healthcheck:
-    test: cqlsh -e "DESCRIBE CLUSTER"
-    interval: 5s
-    timeout: 5s
-    retries: 10
-    start_period: 15s
-  image: scylladb/scylla:6.2
-  mem_limit: 1gb
-  command:
-    - --overprovisioned=1
-    - --reactor-backend=epoll
-    - --seeds=scylla1,scylla2,scylla3
-    - --smp=1
-
 services:
-  scylla1:
-    container_name: scylla1
-    hostname: scylla1
-    <<: *scylla-default
-
-  scylla2:
-    container_name: scylla2
-    hostname: scylla2
-    <<: *scylla-default
-
-  scylla3:
-    container_name: scylla3
-    hostname: scylla3
-    <<: *scylla-default
-
-  scylla4:
-    container_name: scylla4
-    hostname: scylla4
-    <<: *scylla-default
+  scylla:
+    command:
+      - --seeds=minichat-scylla-1,minichat-scylla-2,minichat-scylla-3
+      - --reactor-backend=epoll
+      - --smp=1
+    deploy:
+      replicas: 4
+    healthcheck:
+      test: cqlsh -e "DESCRIBE CLUSTER"
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+    # hostname: scylla  # Hostnames for replicas: {project name}-api-service-{replica number}, see [http.upstream] in services/api-proxy/nginx.conf
+    image: scylladb/scylla:6.2
+    mem_limit: 1gb
 
   data-service:
     build:
       context: .
       dockerfile: services/data/Dockerfile
     container_name: data-service
-    hostname: data-service
     depends_on:
-      scylla1:
+      scylla:
         condition: service_healthy
-      scylla2:
-        condition: service_healthy
-      scylla3:
-        condition: service_healthy
-      scylla4:
-        condition: service_healthy
+    hostname: data-service
 
   api-service:
     build:
       context: .
       dockerfile: services/api/Dockerfile
-    container_name: api-service
     depends_on:
       - data-service
+    deploy:
+      replicas: 2
+    # hostname: api-service
+
+  api-reverse-proxy:
+    build:
+      context: .
+      dockerfile: services/api-proxy/Dockerfile
+    container_name: api-reverse-proxy
+    depends_on:
+      - api-service
     ports:
-      - "8000:8000"
+      - "80:80"

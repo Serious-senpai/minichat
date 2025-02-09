@@ -17,7 +17,8 @@
                 "mypy-type-checker.preferDaemon": false,
                 "protoc": {
                     "options": [
-                        "--proto_path=${containerWorkspaceFolder}/proto"
+                        "--proto_path=${containerWorkspaceFolder}/proto",
+                        "--experimental_allow_proto3_optional"
                     ]
                 },
                 "python.defaultInterpreterPath": "/venv/bin/python",
