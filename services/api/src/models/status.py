@@ -11,10 +11,3 @@ __all__ = ("Status",)
 class Status(pydantic.BaseModel):
     success: bool
     message: str
-
-    @classmethod
-    def from_proto(cls, message: status_pb2.PStatus) -> Status:
-        return cls(
-            success=message.success,
-            message=message.message,
-        )

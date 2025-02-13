@@ -38,13 +38,17 @@ struct SettingsJson {
 pub struct ApplicationService {
     bcrypt_cost: u32,
     epoch: DateTime<Utc>,
+    rabbitmq: Arc<lapin::Channel>,
     session: Arc<scylla::Session>,
 }
 
 static _ID_COUNTER: atomic::AtomicI16 = atomic::AtomicI16::new(0);
 
 impl ApplicationService {
-    pub async fn new(session: Arc<scylla::Session>) -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn new(
+        rabbitmq: Arc<lapin::Channel>,
+        session: Arc<scylla::Session>,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
         for mut statement in include_str!("../../scripts/database.cql").split(";") {
             statement = statement.trim();
             if !statement.is_empty() {
@@ -58,6 +62,7 @@ impl ApplicationService {
         Ok(Self {
             bcrypt_cost: json.bcrypt_cost,
             epoch: DateTime::from_timestamp_millis(json.epoch).expect("Invalid epoch"),
+            rabbitmq,
             session,
         })
     }

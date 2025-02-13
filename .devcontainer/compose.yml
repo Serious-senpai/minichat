@@ -1,15 +1,29 @@
 # Reference: https://docs.docker.com/reference/compose-file/
-name: minichat-dev
+name: minichat
+
+x-rabbitmq-default: &rabbitmq-default
+  build:
+    context: ..
+    dockerfile: services/rabbitmq/Dockerfile
+  environment:
+    - RABBITMQ_ERLANG_COOKIE=cluster_cookie
+  healthcheck:
+    test: rabbitmq-diagnostics -q status
+    interval: 5s
+    timeout: 5s
+    retries: 20
+    start_period: 15s
+  mem_limit: 1gb
 
 services:
   scylla:
     command:
       - --overprovisioned=1
       - --reactor-backend=epoll
-      - --seeds=scylla1,scylla2,scylla3
+      - --seeds=minichat-scylla-1,minichat-scylla-2,minichat-scylla-3
       - --smp=1
     deploy:
-      replicas: 4
+      replicas: 3
     healthcheck:
       test: cqlsh -e "DESCRIBE CLUSTER"
       interval: 5s
@@ -20,16 +34,40 @@ services:
     image: scylladb/scylla:6.2
     mem_limit: 1gb
 
+  rabbitmq-1:
+    container_name: rabbitmq-1
+    hostname: rabbitmq-1
+    <<: *rabbitmq-default
+
+  rabbitmq-2:
+    container_name: rabbitmq-2
+    hostname: rabbitmq-2
+    <<: *rabbitmq-default
+
+  rabbitmq-3:
+    container_name: rabbitmq-3
+    hostname: rabbitmq-3
+    <<: *rabbitmq-default
+
   devcontainer:
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
+    command: bash -c "services/api/scripts/compile.sh && sleep infinity"
     container_name: devcontainer
+    depends_on:
+      scylla:
+        condition: service_healthy
+      rabbitmq-1:
+        condition: service_healthy
+      rabbitmq-2:
+        condition: service_healthy
+      rabbitmq-3:
+        condition: service_healthy
     extra_hosts:
       data-service: "127.0.0.1"
     ports:
       - "8000:8000"
     volumes:
       - ..:/workspaces/minichat
-    command: bash -c "services/api/scripts/compile.sh && sleep infinity"
     working_dir: /workspaces/minichat

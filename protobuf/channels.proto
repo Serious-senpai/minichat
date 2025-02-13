@@ -7,8 +7,10 @@ import "users.proto";
 package p_channels;
 
 service ChannelService {
-    rpc Query(google.protobuf.Empty) returns (PChannelQueryResult);
+    rpc CreateChannel(PCreateChannelRequest) returns (PChannel);
+    rpc CreateMessage(PCreateMessageRequest) returns (PMessage);
     rpc History(PHistoryQuery) returns (PHistoryQueryResult);
+    rpc Query(google.protobuf.Empty) returns (PChannelQueryResult);
 }
 
 message PChannel {
@@ -23,6 +25,18 @@ message PMessage {
     string content = 2;
     p_users.PUser author = 3;
     PChannel channel = 4;
+}
+
+message PCreateChannelRequest {
+    string name = 1;
+    string description = 2;
+    int64 owner_id = 3;
+}
+
+message PCreateMessageRequest {
+    string content = 2;
+    int64 author_id = 3;
+    int64 channel_id = 4;
 }
 
 message PChannelQueryResult {

@@ -8,6 +8,7 @@ API_SERVICE_DIR=$(realpath $SCRIPT_DIR/..)
 echo "Got root of repository: $ROOT_DIR, root of API service: $API_SERVICE_DIR"
 
 mkdir -p $API_SERVICE_DIR/src/proto
+/venv/bin/python -m grpc_tools.protoc --version
 /venv/bin/python -m grpc_tools.protoc \
     --proto_path=$ROOT_DIR/protobuf \
     --pyi_out=$API_SERVICE_DIR/src/proto/ \

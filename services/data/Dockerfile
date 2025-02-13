@@ -12,6 +12,6 @@ RUN rm -rf target && cargo build --release
 FROM rust:1.84-slim AS runner
 
 WORKDIR /app
-COPY --from=builder /app/services/data/target/release/data .
+COPY --from=builder /app/services/data/target/release/data-service .
 
-CMD ["./data"]
+ENTRYPOINT ["./data-service"]

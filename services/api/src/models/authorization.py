@@ -1,32 +1,18 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-from typing import Annotated, Optional, Literal
+from typing import Annotated, Literal
 
 import jwt
 import pydantic
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 
+from .users import User
 from ..core import ConfigClient, JWT_ALGORITHM, TOKEN_EXPIRATION_MINUTES
-from ..proto import users_pb2
 
 
-__all__ = ("Account", "AccountToken")
-
-
-class Account(pydantic.BaseModel):
-    id: int
-    username: str
-    permissions: int
-
-    @classmethod
-    def from_proto(cls, message: users_pb2.PUser) -> Account:
-        return cls(
-            id=message.id,
-            username=message.username,
-            permissions=message.permissions,
-        )
+__all__ = ("AccountToken",)
 
 
 class AccountToken(pydantic.BaseModel):
@@ -34,7 +20,7 @@ class AccountToken(pydantic.BaseModel):
     token_type: Literal["bearer"]
 
     @classmethod
-    def create(cls, data: Account, *, secret_key: str) -> AccountToken:
+    def create(cls, data: User, *, secret_key: str) -> AccountToken:
         encoded = data.model_dump()
         encoded["exp"] = datetime.now(timezone.utc) + timedelta(minutes=TOKEN_EXPIRATION_MINUTES)
         return cls(
@@ -43,7 +29,17 @@ class AccountToken(pydantic.BaseModel):
         )
 
     @staticmethod
-    async def verify(token: Annotated[str, Depends(OAuth2PasswordBearer("/auth/token", scheme_name="oauth2"))]) -> Optional[Account]:
+    async def verify(
+        token: Annotated[
+            str,
+            Depends(
+                OAuth2PasswordBearer(
+                    "/auth/token",
+                    scheme_name="oauth2",
+                ),
+            ),
+        ],
+    ) -> User:
         try:
             payload = jwt.decode(
                 token,
@@ -51,7 +47,7 @@ class AccountToken(pydantic.BaseModel):
                 algorithms=[JWT_ALGORITHM],
                 options={"require": ["exp"]},
             )
-            return Account.model_validate(payload)
+            return User.model_validate(payload, strict=True)
 
         except Exception:
-            return None
+            raise HTTPException(401, detail="Invalid token")

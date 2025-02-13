@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use scylla::macros;
 use scylla::prepared_statement;
 use scylla::statement::Consistency;
@@ -49,12 +47,13 @@ struct _InsertAccountRow {
 /// This function is automatically called by [`sync::OnceCell`], a reference to
 /// [`_STATEMENTS`] can be retrieved via:
 /// ```rust
-/// let statements = _STATEMENTS.get_or_try_init(|| _prepare(session)).await?;
+/// let statements = _STATEMENTS.get_or_try_init(|| _prepare(application)).await?;
 /// ```
 async fn _prepare(
-    session: Arc<scylla::Session>,
+    application: &super::ApplicationService,
 ) -> Result<_Statements, Box<dyn std::error::Error>> {
-    let mut create1 = session
+    let mut create1 = application
+        .session
         .prepare(
             r"INSERT INTO accounts.info_by_username (id, username, hashed_password, permissions)
             VALUES (?, ?, ?, 0)
@@ -63,7 +62,8 @@ async fn _prepare(
         .await?;
     create1.set_consistency(Consistency::All);
 
-    let mut create2 = session
+    let mut create2 = application
+        .session
         .prepare(
             r"INSERT INTO accounts.info_by_id (id, username, hashed_password, permissions)
             VALUES (?, ?, ?, 0)
@@ -72,7 +72,8 @@ async fn _prepare(
         .await?;
     create2.set_consistency(Consistency::All);
 
-    let mut create3 = session
+    let mut create3 = application
+        .session
         .prepare(
             r"UPDATE accounts.info_by_username
             SET id = ?
@@ -81,7 +82,8 @@ async fn _prepare(
         .await?;
     create3.set_consistency(Consistency::All);
 
-    let mut login = session
+    let mut login = application
+        .session
         .prepare(
             r"SELECT id, username, hashed_password, permissions
             FROM accounts.info_by_username
@@ -125,7 +127,7 @@ impl account_service_server::AccountService for super::ApplicationService {
     ) -> Result<tonic::Response<p_status::PStatus>, tonic::Status> {
         let message = request.into_inner();
         let statements = _STATEMENTS
-            .get_or_try_init(|| _prepare(self.session.clone()))
+            .get_or_try_init(|| _prepare(self))
             .await
             .map_err(super::ApplicationService::error)?;
 
@@ -201,7 +203,7 @@ impl account_service_server::AccountService for super::ApplicationService {
     ) -> Result<tonic::Response<p_users::PUser>, tonic::Status> {
         let message = request.into_inner();
         let statements = _STATEMENTS
-            .get_or_try_init(|| _prepare(self.session.clone()))
+            .get_or_try_init(|| _prepare(self))
             .await
             .map_err(super::ApplicationService::error)?;
 

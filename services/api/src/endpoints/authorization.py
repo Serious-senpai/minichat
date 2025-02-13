@@ -5,11 +5,14 @@ from typing import Annotated
 import fastapi
 import grpc  # type: ignore
 import pydantic
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestFormStrict
 
 from ..core import ConfigClient, format_error, rpc
-from ..models import authorization, status
-from ..proto import authorization_pb2, authorization_pb2_grpc
+from ..models.adapters import get_converter
+from ..models.authorization import AccountToken
+from ..models.status import Status
+from ..models.users import User
+from ..proto import authorization_pb2, authorization_pb2_grpc, status_pb2, users_pb2
 
 
 __all__ = ("router",)
@@ -29,15 +32,26 @@ class _Authorization(pydantic.BaseModel):
 
 @router.post(
     "/create",
+    name="Account creation",
+    description="Register a new account",
+    responses={
+        200: {
+            "description": "Created a new account",
+            "model": Status,
+        },
+        400: {
+            "description": "Operation failed",
+        },
+    },
 )
 async def create(
     headers: Annotated[_Authorization, fastapi.Header(description="Authorization headers")],
     response: fastapi.Response,
-) -> status.Status:
+) -> Status:
     channel = await rpc()
     stub = authorization_pb2_grpc.AccountServiceStub(channel)
     try:
-        result = await stub.Create(
+        result: status_pb2.PStatus = await stub.Create(
             authorization_pb2.PAuthInfo(
                 username=headers.username,
                 password=headers.password,
@@ -46,9 +60,9 @@ async def create(
 
     except grpc.aio.AioRpcError as e:
         response.status_code = fastapi.status.HTTP_400_BAD_REQUEST
-        return status.Status(success=False, message=format_error(e))
+        return Status(success=False, message=format_error(e))
 
-    return status.Status.from_proto(result)
+    return get_converter(status_pb2.PStatus, Status)(result)
 
 
 @router.post(
@@ -58,18 +72,18 @@ async def create(
     responses={
         200: {
             "description": "JWT for authorization",
-            "model": authorization.AccountToken,
+            "model": AccountToken,
         },
         400: {
-            "description": "Invalid login data",
-        }
+            "description": "Operation failed",
+        },
     },
 )
-async def token(form: Annotated[OAuth2PasswordRequestForm, fastapi.Depends()]) -> authorization.AccountToken:
+async def token(form: Annotated[OAuth2PasswordRequestFormStrict, fastapi.Depends()]) -> AccountToken:
     channel = await rpc()
     stub = authorization_pb2_grpc.AccountServiceStub(channel)
     try:
-        result = await stub.Login(
+        result: users_pb2.PUser = await stub.Login(
             authorization_pb2.PAuthInfo(
                 username=form.username,
                 password=form.password,
@@ -82,7 +96,7 @@ async def token(form: Annotated[OAuth2PasswordRequestForm, fastapi.Depends()]) -
             detail=format_error(e),
         )
 
-    return authorization.AccountToken.create(
-        data=authorization.Account.from_proto(result),
+    return AccountToken.create(
+        data=get_converter(users_pb2.PUser, User)(result),
         secret_key=await ConfigClient().secret_key(),
     )
