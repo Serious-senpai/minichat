@@ -6,11 +6,23 @@ API_SERVICE_DIR=$(realpath $SCRIPT_DIR/..)
 
 echo "Got root of API service: $API_SERVICE_DIR"
 
-if [ "$EUID" -eq 0 ]
-then
-    python -m venv /venv
-else
-    sudo python -m venv /venv
-fi
+execute() {
+    if [ "$EUID" -eq 0 ]
+    then
+        command=$1
+    else
+        command="sudo $1"
+    fi
 
-/venv/bin/pip install -r $API_SERVICE_DIR/requirements.txt
+    echo "Running \"$command\""
+    $command
+
+    status=$?
+    if [ $status -ne 0 ]; then
+        echo "::error::\"$command\" exit with status $status"
+        exit $status
+    fi
+}
+
+execute "python -m venv /venv"
+execute "/venv/bin/pip install -r $API_SERVICE_DIR/requirements.txt"
