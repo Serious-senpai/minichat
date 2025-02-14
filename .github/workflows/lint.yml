@@ -1,0 +1,85 @@
+name: Lint
+
+on: [ push, pull_request ]
+
+permissions:
+  contents: read
+
+jobs:
+  autopep8:
+    name: Run autopep8
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Initialize environment
+        working-directory: services/api
+        run: scripts/install.sh && scripts/compile.sh
+
+      - name: Run autopep8
+        working-directory: services/api
+        run: autopep8 --exit-code --diff -aaar .
+
+  mypy:
+    name: Run mypy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Initialize environment
+        working-directory: services/api
+        run: scripts/install.sh && scripts/compile.sh
+
+      - name: Run mypy
+        working-directory: services/api
+        run: mypy .
+
+  flake8:
+    name: Run flake8
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Initialize environment
+        working-directory: services/api
+        run: scripts/install.sh && scripts/compile.sh
+
+      - name: Run flake8
+        working-directory: services/api
+        run: flake8 .
+
+  clippy:
+    name: Run clippy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        run: curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=1.84 -y
+
+      - name: Run clippy
+        working-directory: services/data
+        run: cargo clippy --all-features --no-deps -- -D warnings

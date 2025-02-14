@@ -1,4 +1,5 @@
 use std::collections;
+use std::collections::hash_map::Entry;
 
 use lapin::options;
 use lapin::types;
@@ -247,7 +248,7 @@ impl channel_service_server::ChannelService for super::ApplicationService {
             name: message.name,
             description: message.description,
             owner: Some(
-                _fetch_user(&self, message.owner_id)
+                _fetch_user(self, message.owner_id)
                     .await
                     .map(|user| p_users::PUser {
                         id: user.id,
@@ -269,11 +270,11 @@ impl channel_service_server::ChannelService for super::ApplicationService {
             .await
             .map_err(super::ApplicationService::error)?;
 
-        let author = _fetch_user(&self, message.author_id)
+        let author = _fetch_user(self, message.author_id)
             .await
             .map_err(super::ApplicationService::error)?;
 
-        let channel = _fetch_channel(&self, message.channel_id)
+        let channel = _fetch_channel(self, message.channel_id)
             .await
             .map_err(super::ApplicationService::error)?;
 
@@ -330,7 +331,7 @@ impl channel_service_server::ChannelService for super::ApplicationService {
                 name: channel.name,
                 description: channel.description,
                 owner: Some(
-                    _fetch_user(&self, channel.owner_id)
+                    _fetch_user(self, channel.owner_id)
                         .await
                         .map(|user| p_users::PUser {
                             id: user.id,
@@ -406,9 +407,8 @@ impl channel_service_server::ChannelService for super::ApplicationService {
             .map_err(super::ApplicationService::error)?
             .flatten()
         {
-            if !authors.contains_key(&row.author_id) {
-                authors.insert(
-                    row.author_id,
+            if let Entry::Vacant(e) = authors.entry(row.author_id) {
+                e.insert(
                     _fetch_user(self, row.author_id)
                         .await
                         .map_err(super::ApplicationService::error)
@@ -457,9 +457,8 @@ impl channel_service_server::ChannelService for super::ApplicationService {
             .map_err(super::ApplicationService::error)?
             .flatten()
         {
-            if !owners.contains_key(&row.owner_id) {
-                owners.insert(
-                    row.owner_id,
+            if let Entry::Vacant(e) = owners.entry(row.owner_id) {
+                e.insert(
                     _fetch_user(self, row.owner_id)
                         .await
                         .map_err(super::ApplicationService::error)
