@@ -19,6 +19,7 @@ x-rabbitmq-default: &rabbitmq-default
 services:
   scylla:
     command:
+      - --memory=1G
       - --reactor-backend=epoll
       - --seeds=minichat-scylla-1,minichat-scylla-2,minichat-scylla-3
       - --smp=1
@@ -32,7 +33,6 @@ services:
       start_period: 15s
     # hostname: scylla  # Hostnames for replicas: {project name}-api-service-{replica number}, see [http.upstream] in services/api-proxy/nginx.conf
     image: scylladb/scylla:6.2
-    mem_limit: 1gb
 
   rabbitmq-1:
     container_name: rabbitmq-1
