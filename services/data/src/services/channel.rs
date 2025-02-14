@@ -2,6 +2,7 @@ use std::collections;
 
 use lapin::options;
 use lapin::types;
+use prost::Message;
 use scylla::macros;
 use scylla::prepared_statement;
 use scylla::statement::Consistency;
@@ -316,27 +317,7 @@ impl channel_service_server::ChannelService for super::ApplicationService {
             .await
             .map_err(super::ApplicationService::error)?;
 
-        self.rabbitmq
-            .exchange_declare(
-                "channel-messages",
-                lapin::ExchangeKind::Direct,
-                options::ExchangeDeclareOptions::default(),
-                types::FieldTable::default(),
-            )
-            .await
-            .map_err(super::ApplicationService::error)?;
-        self.rabbitmq
-            .basic_publish(
-                "channel-messages",
-                format!("channel-{}", &message.channel_id).as_str(),
-                options::BasicPublishOptions::default(),
-                message.content.as_bytes(),
-                lapin::BasicProperties::default(),
-            )
-            .await
-            .map_err(super::ApplicationService::error)?;
-
-        Ok(tonic::Response::new(p_channels::PMessage {
+        let result = p_channels::PMessage {
             id,
             content: message.content,
             author: Some(p_users::PUser {
@@ -359,7 +340,29 @@ impl channel_service_server::ChannelService for super::ApplicationService {
                         .map_err(super::ApplicationService::error)?,
                 ),
             }),
-        }))
+        };
+
+        self.rabbitmq
+            .exchange_declare(
+                "channel-messages",
+                lapin::ExchangeKind::Direct,
+                options::ExchangeDeclareOptions::default(),
+                types::FieldTable::default(),
+            )
+            .await
+            .map_err(super::ApplicationService::error)?;
+        self.rabbitmq
+            .basic_publish(
+                "channel-messages",
+                format!("channel-{}", &message.channel_id).as_str(),
+                options::BasicPublishOptions::default(),
+                result.encode_to_vec().as_slice(),
+                lapin::BasicProperties::default(),
+            )
+            .await
+            .map_err(super::ApplicationService::error)?;
+
+        Ok(tonic::Response::new(result))
     }
 
     async fn history(

@@ -1,5 +1,5 @@
 {
-    "bcrypt-cost": 10,
+    "bcrypt-cost": 15,
     "epoch": 1735689600000,
     "jwt-algorithm": "HS256",
     "token-expiration-minutes": 15

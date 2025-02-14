@@ -3,7 +3,7 @@ name: minichat
 
 x-rabbitmq-default: &rabbitmq-default
   build:
-    context: ..
+    context: .
     dockerfile: services/rabbitmq/Dockerfile
   environment:
     - RABBITMQ_ERLANG_COOKIE=cluster_cookie
@@ -14,6 +14,7 @@ x-rabbitmq-default: &rabbitmq-default
     retries: 20
     start_period: 15s
   mem_limit: 1gb
+  user: rabbitmq
 
 services:
   scylla:
@@ -52,7 +53,11 @@ services:
     build:
       context: .
       dockerfile: services/data/Dockerfile
-    command: minichat-scylla-1 minichat-scylla-2 minichat-scylla-3
+    command:
+      - --host=0.0.0.0
+      - --port=16000
+      - --scylla-hosts=minichat-scylla-1,minichat-scylla-2,minichat-scylla-3
+      - --amqp-host=amqp://guest:guest@rabbitmq-1:5672
     container_name: data-service
     depends_on:
       scylla:
@@ -69,6 +74,11 @@ services:
     build:
       context: .
       dockerfile: services/api/Dockerfile
+    command:
+      - --host=0.0.0.0
+      - --port=8000
+      - --data-service=data-service:16000
+      - --amqp-host=amqp://guest:guest@rabbitmq-1:5672
     depends_on:
       - data-service
     deploy:

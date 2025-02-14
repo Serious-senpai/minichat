@@ -4,6 +4,7 @@ from typing import ClassVar, Optional, TYPE_CHECKING
 
 import grpc  # type: ignore
 
+from .cli import namespace
 from .utils import Singleton
 from ..proto import config_pb2, config_pb2_grpc
 
@@ -11,13 +12,13 @@ from ..proto import config_pb2, config_pb2_grpc
 __all__ = ("rpc", "format_error", "ConfigClient")
 
 
-async def _initialize_channel() -> grpc.aio.Channel:
-    channel = grpc.aio.insecure_channel("data-service:16000")
+async def __initialize_channel() -> grpc.aio.Channel:
+    channel = grpc.aio.insecure_channel(namespace.data_service)
     await channel.channel_ready()
     return channel
 
 
-rpc = Singleton(_initialize_channel)
+rpc = Singleton(__initialize_channel)
 
 
 def format_error(e: grpc.aio.AioRpcError) -> str:

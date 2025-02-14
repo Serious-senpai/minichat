@@ -14,13 +14,21 @@ mod services;
 #[command(name = "data-service")]
 #[command(long_about = None)]
 struct _Arguments {
+    /// The host to bind the gRPC server to
+    #[arg(long, default_value_t = String::from("0.0.0.0"))]
+    host: String,
+
+    /// The port to bind the gRPC server to
+    #[arg(long)]
+    port: u16,
+
     /// A comma-separated list of ScyllaDB clustered hosts to connect to
-    #[arg(long, short)]
+    #[arg(long)]
     scylla_hosts: String,
 
-    /// A comma-separated list of AMQP clustered hosts to connect to
-    #[arg(long, short)]
-    amqp_hosts: String,
+    /// A RabbitMQ URL to connect to (e.g. `amqp://guest:guest@localhost:5672`)
+    #[arg(long)]
+    amqp_host: String,
 }
 
 #[tokio::main]
@@ -36,10 +44,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Use a single RabbitMQ channel for all services
-    let aqmp_hosts = arguments.amqp_hosts.split(",").collect::<Vec<&str>>();
     let rabbitmq = Arc::new(
         lapin::Connection::connect(
-            format!("amqp://{}:5672", aqmp_hosts[0]).as_str(),
+            arguments.amqp_host.as_str(),
             lapin::ConnectionProperties::default()
                 .with_executor(tokio_executor_trait::Tokio::current())
                 .with_reactor(tokio_reactor_trait::Tokio),
@@ -59,7 +66,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_service(config_service_server::ConfigServiceServer::new(
             services::ApplicationService::new(rabbitmq.clone(), session.clone()).await?,
         ))
-        .serve("0.0.0.0:16000".parse::<SocketAddr>()?)
+        .serve(format!("{}:{}",arguments.host, arguments.port).parse::<SocketAddr>()?)
         .await?;
 
     Ok(())
