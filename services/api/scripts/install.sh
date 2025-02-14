@@ -6,5 +6,5 @@ API_SERVICE_DIR=$(realpath $SCRIPT_DIR/..)
 
 echo "Got root of API service: $API_SERVICE_DIR"
 
-python -m venv /venv
-/venv/bin/pip install -r $API_SERVICE_DIR/requirements.txt
+sudo python -m venv /venv
+sudo /venv/bin/pip install -r $API_SERVICE_DIR/requirements.txt
