@@ -3,16 +3,20 @@
     "customizations": {
         "vscode": {
             "extensions": [
+                "ms-azuretools.vscode-docker",
                 "ms-python.autopep8",
                 "ms-python.mypy-type-checker",
                 "ms-python.python",
                 "rust-lang.rust-analyzer",
+                "vue.volar",
                 "zxh404.vscode-proto3"
             ],
             "settings": {
                 "autopep8.cwd": "${containerWorkspaceFolder}/services/api",
                 "editor.formatOnSave": true,
                 "extensions.ignoreRecommendations": false,
+                "files.insertFinalNewline": true,
+                "javascript.format.enable": true,
                 "git.autorefresh": true,
                 "mypy-type-checker.preferDaemon": false,
                 "protoc": {

@@ -66,8 +66,11 @@ services:
         condition: service_healthy
       rabbitmq-3:
         condition: service_healthy
+    environment:
+      - VUE_APP_BASE_API_URL=http://localhost:8000
     ports:
-      - "80:80"
+      - "8080:8080"
+      - "8000:8000"
     volumes:
       - ..:/workspaces/minichat
     working_dir: /workspaces/minichat

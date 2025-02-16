@@ -6,6 +6,8 @@ RUN apt-get update && apt-get install -y \
     curl \
     git \
     iputils-ping \
+    nodejs \
+    npm \
     protobuf-compiler \
     python-is-python3 \
     python3 \

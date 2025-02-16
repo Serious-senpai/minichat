@@ -1,4 +1,4 @@
-name: Build Docker images
+name: Build
 
 on: [ push, pull_request ]
 
@@ -7,7 +7,7 @@ permissions:
 
 jobs:
   build:
-    name: Build production images
+    name: Build Docker images
     runs-on: ubuntu-latest
 
     steps:
