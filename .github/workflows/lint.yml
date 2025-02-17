@@ -86,3 +86,24 @@ jobs:
       - name: Run clippy
         working-directory: services/data
         run: cargo clippy --all-features --no-deps -- -D warnings
+
+  eslint:
+    name: Run eslint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18.19"
+
+      - name: Install dependencies
+        working-directory: services/frontend
+        run: npm install
+
+      - name: Run eslint
+        working-directory: services/frontend
+        run: npx eslint .

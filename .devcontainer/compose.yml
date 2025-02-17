@@ -69,8 +69,8 @@ services:
     environment:
       - VUE_APP_BASE_API_URL=http://localhost:8000
     ports:
-      - "8080:8080"
-      - "8000:8000"
+      - "5173:5173" # frontend (vite)
+      - "8000:8000" # api (uvicorn)
     volumes:
       - ..:/workspaces/minichat
     working_dir: /workspaces/minichat
