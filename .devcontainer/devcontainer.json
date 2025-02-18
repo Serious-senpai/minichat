@@ -3,6 +3,7 @@
     "customizations": {
         "vscode": {
             "extensions": [
+                "dbaeumer.vscode-eslint",
                 "ms-azuretools.vscode-docker",
                 "ms-python.autopep8",
                 "ms-python.mypy-type-checker",
@@ -14,6 +15,10 @@
             "settings": {
                 "autopep8.cwd": "${containerWorkspaceFolder}/services/api",
                 "editor.formatOnSave": true,
+                "eslint.run": "onSave",
+                "eslint.workingDirectories": [
+                    "${containerWorkspaceFolder}/services/frontend"
+                ],
                 "extensions.ignoreRecommendations": false,
                 "files.insertFinalNewline": true,
                 "javascript.format.enable": true,

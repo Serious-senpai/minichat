@@ -23,6 +23,7 @@ export default defineConfigWithVueTs(
   {
     name: "app/custom",
     rules: {
+      indent: ["error", 2],
       quotes: ["error", "double"],
     },
   },

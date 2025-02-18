@@ -30,4 +30,10 @@ if __name__ == "__main__":
         allow_headers=["*"],
     )
 
-    uvicorn.run(app, host=namespace.host, port=namespace.port, log_level=namespace.log_level)
+    uvicorn.run(
+        app,
+        host=namespace.host,
+        port=namespace.port,
+        workers=namespace.workers,
+        log_level=namespace.log_level,
+    )
