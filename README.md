@@ -1,4 +1,5 @@
 [![Lint](https://github.com/Serious-senpai/minichat/actions/workflows/lint.yml/badge.svg)](https://github.com/Serious-senpai/minichat/actions/workflows/lint.yml)
+[![Build](https://github.com/Serious-senpai/minichat/actions/workflows/build.yml/badge.svg)](https://github.com/Serious-senpai/minichat/actions/workflows/build.yml)
 
 # minichat
 
