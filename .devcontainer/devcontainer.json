@@ -15,6 +15,7 @@
             "settings": {
                 "autopep8.cwd": "${containerWorkspaceFolder}/services/api",
                 "editor.formatOnSave": true,
+                "eslint.enable": true,
                 "eslint.run": "onSave",
                 "eslint.workingDirectories": [
                     "${containerWorkspaceFolder}/services/frontend"

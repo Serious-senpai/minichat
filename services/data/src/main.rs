@@ -19,15 +19,15 @@ struct _Arguments {
     host: String,
 
     /// The port to bind the gRPC server to
-    #[arg(long)]
+    #[arg(long, default_value_t = 16000)]
     port: u16,
 
     /// A comma-separated list of ScyllaDB clustered hosts to connect to
-    #[arg(long)]
+    #[arg(long, default_value_t = String::from("minichat-scylla-1,minichat-scylla-2,minichat-scylla-3"))]
     scylla_hosts: String,
 
-    /// A RabbitMQ URL to connect to (e.g. `amqp://guest:guest@localhost:5672`)
-    #[arg(long)]
+    /// A RabbitMQ URL to connect to
+    #[arg(long, default_value_t = String::from("amqp://guest:guest@rabbitmq-proxy:5672"))]
     amqp_host: String,
 }
 
@@ -66,7 +66,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_service(config_service_server::ConfigServiceServer::new(
             services::ApplicationService::new(rabbitmq.clone(), session.clone()).await?,
         ))
-        .serve(format!("{}:{}",arguments.host, arguments.port).parse::<SocketAddr>()?)
+        .serve(format!("{}:{}", arguments.host, arguments.port).parse::<SocketAddr>()?)
         .await?;
 
     Ok(())

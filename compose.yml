@@ -2,9 +2,6 @@
 name: minichat
 
 x-rabbitmq-default: &rabbitmq-default
-  build:
-    context: .
-    dockerfile: services/rabbitmq/Dockerfile
   environment:
     - RABBITMQ_ERLANG_COOKIE=cluster_cookie
   healthcheck:
@@ -13,6 +10,7 @@ x-rabbitmq-default: &rabbitmq-default
     timeout: 5s
     retries: 20
     start_period: 15s
+  image: custom-rabbitmq
   mem_limit: 1gb
   user: rabbitmq
 
@@ -35,6 +33,9 @@ services:
     image: scylladb/scylla:6.2
 
   rabbitmq-1:
+    build:
+      context: .
+      dockerfile: services/rabbitmq/Dockerfile
     container_name: rabbitmq-1
     hostname: rabbitmq-1
     <<: *rabbitmq-default
@@ -49,6 +50,20 @@ services:
     hostname: rabbitmq-3
     <<: *rabbitmq-default
 
+  rabbitmq-proxy:
+    build:
+      context: .
+      dockerfile: services/rabbitmq-proxy/Dockerfile
+    container_name: rabbitmq-proxy
+    depends_on:
+      rabbitmq-1:
+        condition: service_healthy
+      rabbitmq-2:
+        condition: service_healthy
+      rabbitmq-3:
+        condition: service_healthy
+    hostname: rabbitmq-proxy
+
   data-service:
     build:
       context: .
@@ -57,17 +72,13 @@ services:
       - --host=0.0.0.0
       - --port=16000
       - --scylla-hosts=minichat-scylla-1,minichat-scylla-2,minichat-scylla-3
-      - --amqp-host=amqp://guest:guest@rabbitmq-1:5672
+      - --amqp-host=amqp://guest:guest@rabbitmq-proxy:5672
     container_name: data-service
     depends_on:
       scylla:
         condition: service_healthy
-      rabbitmq-1:
-        condition: service_healthy
-      rabbitmq-2:
-        condition: service_healthy
-      rabbitmq-3:
-        condition: service_healthy
+      rabbitmq-proxy:
+        condition: service_started
     hostname: data-service
 
   api-service:
@@ -78,18 +89,18 @@ services:
       - --host=0.0.0.0
       - --port=8000
       - --data-service=data-service:16000
-      - --amqp-host=amqp://guest:guest@rabbitmq-1:5672
+      - --amqp-host=amqp://guest:guest@rabbitmq-proxy:5672
     depends_on:
       - data-service
     deploy:
       replicas: 2
     # hostname: api-service
 
-  api-reverse-proxy:
+  api-proxy:
     build:
       context: .
       dockerfile: services/api-proxy/Dockerfile
-    container_name: api-reverse-proxy
+    container_name: api-proxy
     depends_on:
       - api-service
     ports:
@@ -103,6 +114,6 @@ services:
       dockerfile: services/frontend/Dockerfile
     container_name: frontend
     depends_on:
-      - api-reverse-proxy
+      - api-proxy
     ports:
       - "80:80"

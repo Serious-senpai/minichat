@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Annotated
 
-import fastapi
 import grpc  # type: ignore
 import pydantic
+from fastapi import APIRouter, Depends, HTTPException, Header, Response, status
 from fastapi.security import OAuth2PasswordRequestFormStrict
 
 from ..core import ConfigClient, format_error, rpc
@@ -16,9 +16,18 @@ from ..proto import authorization_pb2, authorization_pb2_grpc, status_pb2, users
 
 
 __all__ = ("router",)
-router = fastapi.APIRouter(
+router = APIRouter(
     prefix="/auth",
 )
+
+
+@router.get(
+    "/@me",
+    name="Get current user",
+    description="Get information of current user",
+)
+async def me(user: Annotated[User, Depends(AccountToken.verify)]) -> User:
+    return user
 
 
 class _Authorization(pydantic.BaseModel):
@@ -45,8 +54,8 @@ class _Authorization(pydantic.BaseModel):
     },
 )
 async def create(
-    headers: Annotated[_Authorization, fastapi.Header(description="Authorization headers")],
-    response: fastapi.Response,
+    headers: Annotated[_Authorization, Header(description="Authorization headers")],
+    response: Response,
 ) -> Status:
     channel = await rpc()
     stub = authorization_pb2_grpc.AccountServiceStub(channel)
@@ -59,7 +68,7 @@ async def create(
         )
 
     except grpc.aio.AioRpcError as e:
-        response.status_code = fastapi.status.HTTP_400_BAD_REQUEST
+        response.status_code = status.HTTP_400_BAD_REQUEST
         return Status(success=False, message=format_error(e))
 
     return get_converter(status_pb2.PStatus, Status)(result)
@@ -79,7 +88,7 @@ async def create(
         },
     },
 )
-async def token(form: Annotated[OAuth2PasswordRequestFormStrict, fastapi.Depends()]) -> AccountToken:
+async def token(form: Annotated[OAuth2PasswordRequestFormStrict, Depends()]) -> AccountToken:
     channel = await rpc()
     stub = authorization_pb2_grpc.AccountServiceStub(channel)
     try:
@@ -91,7 +100,7 @@ async def token(form: Annotated[OAuth2PasswordRequestFormStrict, fastapi.Depends
         )
 
     except grpc.aio.AioRpcError as e:
-        raise fastapi.HTTPException(
+        raise HTTPException(
             status_code=400,
             detail=format_error(e),
         )

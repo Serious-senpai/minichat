@@ -144,7 +144,7 @@ async def list_messages(
     channel_id: int,
     *,
     newest: Annotated[bool, Query(description="Sort messages from newest to oldest")] = True,
-    before_id: Annotated[int, Query(description="The upper limit of snowflake ID")] = (1 << 63) - 1,
+    before_id: Annotated[int, Query(description="The upper limit of snowflake ID")] = (1 << 53) - 1,  # https://github.com/fastapi/fastapi/discussions/6237
     after_id: Annotated[int, Query(description="The lower limit of snowflake ID")] = 0,
     limit: Annotated[int, Query(description="The maximum number of messages to return (maximum 50)")] = 50,
 ) -> List[Message]:

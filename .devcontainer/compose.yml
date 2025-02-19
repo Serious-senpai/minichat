@@ -2,9 +2,7 @@
 name: minichat
 
 x-rabbitmq-default: &rabbitmq-default
-  build:
-    context: ..
-    dockerfile: services/rabbitmq/Dockerfile
+  cpus: 1.00
   environment:
     - RABBITMQ_ERLANG_COOKIE=cluster_cookie
   healthcheck:
@@ -13,6 +11,7 @@ x-rabbitmq-default: &rabbitmq-default
     timeout: 5s
     retries: 20
     start_period: 15s
+  image: custom-rabbitmq
   mem_limit: 1gb
   user: rabbitmq
 
@@ -36,6 +35,9 @@ services:
     image: scylladb/scylla:6.2
 
   rabbitmq-1:
+    build:
+      context: ..
+      dockerfile: services/rabbitmq/Dockerfile
     container_name: rabbitmq-1
     hostname: rabbitmq-1
     <<: *rabbitmq-default
@@ -50,6 +52,22 @@ services:
     hostname: rabbitmq-3
     <<: *rabbitmq-default
 
+  rabbitmq-proxy:
+    build:
+      context: ..
+      dockerfile: services/rabbitmq-proxy/Dockerfile
+    container_name: rabbitmq-proxy
+    depends_on:
+      rabbitmq-1:
+        condition: service_healthy
+      rabbitmq-2:
+        condition: service_healthy
+      rabbitmq-3:
+        condition: service_healthy
+    hostname: rabbitmq-proxy
+    ports:
+      - "1936:1936"
+
   devcontainer:
     build:
       context: ..
@@ -60,12 +78,8 @@ services:
     depends_on:
       scylla:
         condition: service_healthy
-      rabbitmq-1:
-        condition: service_healthy
-      rabbitmq-2:
-        condition: service_healthy
-      rabbitmq-3:
-        condition: service_healthy
+      rabbitmq-proxy:
+        condition: service_started
     environment:
       - VUE_APP_BASE_API_URL=http://localhost:8000
     ports:
