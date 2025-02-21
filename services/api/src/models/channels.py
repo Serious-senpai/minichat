@@ -5,7 +5,7 @@ import pydantic
 from .users import User
 
 
-__all__ = ("Message",)
+__all__ = ("Channel", "Message",)
 
 
 class Channel(pydantic.BaseModel):
