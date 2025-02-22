@@ -1,5 +1,5 @@
-import pluginVue from "eslint-plugin-vue"
-import { defineConfigWithVueTs, vueTsConfigs } from "@vue/eslint-config-typescript"
+import pluginVue from "eslint-plugin-vue";
+import { defineConfigWithVueTs, vueTsConfigs } from "@vue/eslint-config-typescript";
 
 // To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
 // import { configureVueProject } from '@vue/eslint-config-typescript'
@@ -25,6 +25,8 @@ export default defineConfigWithVueTs(
     rules: {
       indent: ["error", 2],
       quotes: ["error", "double"],
+      semi: ["error", "always"],
+      "no-multiple-empty-lines": ["error", { max: 1, maxEOF: 1, maxBOF: 0 }],
     },
   },
-)
+);

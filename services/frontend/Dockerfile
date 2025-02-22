@@ -1,7 +1,7 @@
 # Reference: https://docs.docker.com/reference/dockerfile/
 FROM node:23.8-alpine AS builder
 
-ARG VUE_APP_BASE_API_URL
+ARG VITE_APP_BASE_API_URL
 COPY ./services/frontend /app
 
 WORKDIR /app

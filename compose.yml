@@ -109,7 +109,7 @@ services:
   frontend:
     build:
       args:
-        VUE_APP_BASE_API_URL: http://localhost:8000
+        VITE_APP_BASE_API_URL: localhost:8000
       context: .
       dockerfile: services/frontend/Dockerfile
     container_name: frontend

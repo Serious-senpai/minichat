@@ -25,4 +25,4 @@ execute() {
 }
 
 execute "python -m venv /venv"
-execute "/venv/bin/pip install -r $API_SERVICE_DIR/requirements.txt"
+execute "/venv/bin/pip install --no-cache-dir -r $API_SERVICE_DIR/requirements.txt"
