@@ -2,14 +2,14 @@
 import { RouterLink } from "vue-router";
 
 defineProps({
-  channel_id: Number,
-  channel_name: String,
+  id: Number,
+  name: String,
 });
 </script>
 
 <template>
-  <RouterLink class="bar d-block p-1 rounded-2 text-decoration-none text-end text-white w-100" :to="`/channels/${channel_id}`">
-    {{ channel_name }}
+  <RouterLink class="bar d-block p-1 rounded-2 text-decoration-none text-end text-white w-100" :to="`/channels/${id}`">
+    {{ name }}
   </RouterLink>
 </template>
 

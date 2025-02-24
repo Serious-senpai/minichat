@@ -215,7 +215,7 @@ impl channel_service_server::ChannelService for super::ApplicationService {
         &self,
         request: tonic::Request<p_channels::PCreateChannelRequest>,
     ) -> Result<tonic::Response<p_channels::PChannel>, tonic::Status> {
-        let message = request.into_inner();
+        let request = request.into_inner();
         let statements = _STATEMENTS
             .get_or_try_init(|| _prepare(self))
             .await
@@ -227,7 +227,7 @@ impl channel_service_server::ChannelService for super::ApplicationService {
                 .session
                 .execute_unpaged(
                     &statements.create_channel,
-                    (&id, &message.name, &message.description, &message.owner_id),
+                    (&id, &request.name, &request.description, &request.owner_id),
                 )
                 .await
                 .map_err(super::ApplicationService::error)?
@@ -245,10 +245,10 @@ impl channel_service_server::ChannelService for super::ApplicationService {
 
         Ok(tonic::Response::new(p_channels::PChannel {
             id,
-            name: message.name,
-            description: message.description,
+            name: request.name,
+            description: request.description,
             owner: Some(
-                _fetch_user(self, message.owner_id)
+                _fetch_user(self, request.owner_id)
                     .await
                     .map(|user| p_users::PUser {
                         id: user.id,
@@ -264,17 +264,17 @@ impl channel_service_server::ChannelService for super::ApplicationService {
         &self,
         request: tonic::Request<p_channels::PCreateMessageRequest>,
     ) -> Result<tonic::Response<p_channels::PMessage>, tonic::Status> {
-        let message = request.into_inner();
+        let request = request.into_inner();
         let statements = _STATEMENTS
             .get_or_try_init(|| _prepare(self))
             .await
             .map_err(super::ApplicationService::error)?;
 
-        let author = _fetch_user(self, message.author_id)
+        let author = _fetch_user(self, request.author_id)
             .await
             .map_err(super::ApplicationService::error)?;
 
-        let channel = _fetch_channel(self, message.channel_id)
+        let channel = _fetch_channel(self, request.channel_id)
             .await
             .map_err(super::ApplicationService::error)?;
 
@@ -286,9 +286,9 @@ impl channel_service_server::ChannelService for super::ApplicationService {
                     &statements.create_message1,
                     (
                         &id,
-                        &message.content,
-                        &message.author_id,
-                        &message.channel_id,
+                        &request.content,
+                        &request.author_id,
+                        &request.channel_id,
                     ),
                 )
                 .await
@@ -310,9 +310,9 @@ impl channel_service_server::ChannelService for super::ApplicationService {
                 &statements.create_message2,
                 (
                     &id,
-                    &message.content,
-                    &message.author_id,
-                    &message.channel_id,
+                    &request.content,
+                    &request.author_id,
+                    &request.channel_id,
                 ),
             )
             .await
@@ -320,7 +320,7 @@ impl channel_service_server::ChannelService for super::ApplicationService {
 
         let result = p_channels::PMessage {
             id,
-            content: message.content,
+            content: request.content,
             author: Some(p_users::PUser {
                 id: author.id,
                 username: author.username,
@@ -355,7 +355,7 @@ impl channel_service_server::ChannelService for super::ApplicationService {
         self.rabbitmq
             .basic_publish(
                 "channel-messages",
-                format!("channel-{}", &message.channel_id).as_str(),
+                format!("channel-{}", &request.channel_id).as_str(),
                 options::BasicPublishOptions::default(),
                 result.encode_to_vec().as_slice(),
                 lapin::BasicProperties::default(),
@@ -370,27 +370,31 @@ impl channel_service_server::ChannelService for super::ApplicationService {
         &self,
         request: tonic::Request<p_channels::PHistoryQuery>,
     ) -> Result<tonic::Response<p_channels::PHistoryQueryResult>, tonic::Status> {
-        let message = request.into_inner();
+        let request = request.into_inner();
         let statements = _STATEMENTS
             .get_or_try_init(|| _prepare(self))
             .await
             .map_err(super::ApplicationService::error)?;
 
-        let before_id = message.before_id.unwrap_or(i64::MAX);
-        let after_id = message.after_id.unwrap_or(i64::MIN);
+        let before_id = if request.before_id == 0 {
+            i64::MAX
+        } else {
+            request.before_id
+        };
+        let after_id = request.after_id;
 
         let temp = self
             .session
             .execute_unpaged(
-                &statements.history[message.newest as usize],
-                (message.id, before_id, after_id, message.limit),
+                &statements.history[request.newest as usize],
+                (request.id, before_id, after_id, request.limit),
             )
             .await
             .map_err(super::ApplicationService::error)?
             .into_rows_result()
             .map_err(super::ApplicationService::error)?;
 
-        let channel = _fetch_channel(self, message.id)
+        let channel = _fetch_channel(self, request.id)
             .await
             .map(|channel| p_channels::PChannel {
                 id: channel.id,
@@ -435,28 +439,36 @@ impl channel_service_server::ChannelService for super::ApplicationService {
 
     async fn query(
         &self,
-        _request: tonic::Request<()>,
+        request: tonic::Request<p_channels::PChannelQuery>,
     ) -> Result<tonic::Response<p_channels::PChannelQueryResult>, tonic::Status> {
+        let request = request.into_inner();
         let statements = _STATEMENTS
             .get_or_try_init(|| _prepare(self))
             .await
             .map_err(super::ApplicationService::error)?;
 
-        let temp = self
-            .session
-            .execute_unpaged(&statements.query, ())
-            .await
-            .map_err(super::ApplicationService::error)?
-            .into_rows_result()
-            .map_err(super::ApplicationService::error)?;
+        let temp = if request.id == 0 {
+            self.session
+                .execute_unpaged(&statements.query, ())
+                .await
+                .map_err(super::ApplicationService::error)?
+                .into_rows_result()
+                .map_err(super::ApplicationService::error)?
+                .rows::<_ChannelRow>()
+                .map_err(super::ApplicationService::error)?
+                .flatten()
+                .collect()
+        } else {
+            let channel = _fetch_channel(self, request.id).await;
+            match channel {
+                Ok(channel) => vec![channel],
+                Err(_) => Vec::new(),
+            }
+        };
 
         let mut owners = collections::HashMap::new();
         let mut result = Vec::new();
-        for row in temp
-            .rows::<_ChannelRow>()
-            .map_err(super::ApplicationService::error)?
-            .flatten()
-        {
+        for row in temp {
             if let Entry::Vacant(e) = owners.entry(row.owner_id) {
                 e.insert(
                     _fetch_user(self, row.owner_id)

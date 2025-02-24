@@ -1,7 +1,5 @@
 syntax = "proto3";
 
-import "google/protobuf/empty.proto";
-
 import "users.proto";
 
 package p_channels;
@@ -10,7 +8,7 @@ service ChannelService {
     rpc CreateChannel(PCreateChannelRequest) returns (PChannel);
     rpc CreateMessage(PCreateMessageRequest) returns (PMessage);
     rpc History(PHistoryQuery) returns (PHistoryQueryResult);
-    rpc Query(google.protobuf.Empty) returns (PChannelQueryResult);
+    rpc Query(PChannelQuery) returns (PChannelQueryResult);
 }
 
 message PChannel {
@@ -39,10 +37,6 @@ message PCreateMessageRequest {
     int64 channel_id = 4;
 }
 
-message PChannelQueryResult {
-    repeated PChannel channels = 1;
-}
-
 message PHistoryQuery {
     /** ID of the channel to query history */
     int64 id = 1;
@@ -50,11 +44,14 @@ message PHistoryQuery {
     /** Whether to return the newest messages first */
     bool newest = 2;
 
-    /** Query snowflake ID smaller or equal to this ID */
-    optional int64 before_id = 3;
+    /**
+        Query snowflake ID smaller than or equal to this ID.
+        When set to 0, implementation should use the greatest 64-bit signed integer.
+    */
+    int64 before_id = 3;
 
-    /** Query snowflake ID larger or equal to this ID */
-    optional int64 after_id = 4;
+    /** Query snowflake ID greater than or equal to this ID */
+    int64 after_id = 4;
 
     /** Maximum number of messages to return */
     int32 limit = 50;
@@ -62,4 +59,13 @@ message PHistoryQuery {
 
 message PHistoryQueryResult {
     repeated PMessage messages = 1;
+}
+
+message PChannelQuery {
+    /** ID of the channel to query, set to 0 to query all channels */
+    int64 id = 1;
+}
+
+message PChannelQueryResult {
+    repeated PChannel channels = 1;
 }

@@ -61,8 +61,8 @@ impl config_service_server::ConfigService for super::ApplicationService {
         &self,
         request: tonic::Request<p_config::PConfigRequest>,
     ) -> Result<tonic::Response<String>, tonic::Status> {
-        let message = request.into_inner();
-        let config_type = message
+        let request = request.into_inner();
+        let config_type = request
             .config_type
             .try_into()
             .map_err(|_| tonic::Status::invalid_argument("Invalid config type"))?;

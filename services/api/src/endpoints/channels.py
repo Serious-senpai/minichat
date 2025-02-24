@@ -4,7 +4,7 @@ from typing import Annotated, List
 
 import aio_pika
 import pydantic
-from fastapi import APIRouter, Depends, Query, WebSocket
+from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket
 
 from ..core import amqp, rpc
 from ..proto import channels_pb2, channels_pb2_grpc
@@ -62,9 +62,25 @@ async def create_channel(
 )
 async def list_channels() -> List[Channel]:
     stub = channels_pb2_grpc.ChannelServiceStub(await rpc())
-    c: channels_pb2.PChannelQueryResult = await stub.Query(None)
+    c: channels_pb2.PChannelQueryResult = await stub.Query(channels_pb2.PChannelQuery(id=0))
     converter = get_converter(channels_pb2.PChannel, Channel)
     return [converter(channel) for channel in c.channels]
+
+
+@router.get(
+    "/{channel_id}",
+    name="Channel query",
+    description="Query a channel by ID",
+)
+async def query_channel(channel_id: int) -> Channel:
+    stub = channels_pb2_grpc.ChannelServiceStub(await rpc())
+    c: channels_pb2.PChannelQueryResult = await stub.Query(channels_pb2.PChannelQuery(id=channel_id))
+
+    if len(c.channels) == 1:
+        converter = get_converter(channels_pb2.PChannel, Channel)
+        return converter(c.channels[0])
+
+    raise HTTPException(404, detail="Channel not found")
 
 
 @router.websocket(

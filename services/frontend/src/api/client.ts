@@ -2,6 +2,7 @@ import axios from "axios";
 import type { AxiosRequestConfig, AxiosResponse } from "axios";
 
 import { User } from "./users";
+import { Status } from "./status";
 
 class AccountToken {
   public access_token: string;
@@ -58,13 +59,34 @@ class Client {
 
           return true;
         }
-      };
+      }
     } catch {
       // pass
     }
 
     this.logout();
     return false;
+  }
+
+  public async register(username: string, password: string): Promise<Status> {
+    try {
+      const response = await this.post<Status>(
+        "/auth/create",
+        null,
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Username": username,
+            "Password": password,
+          },
+          validateStatus: () => true,
+        },
+      );
+
+      return response.data;
+    } catch {
+      return new Status(false, "Connection error");
+    }
   }
 
   public logout(): void {
@@ -88,6 +110,10 @@ class Client {
     }
 
     return config;
+  }
+
+  public websocket(url: string): WebSocket {
+    return new WebSocket(new URL(url, Client._WS_URL));
   }
 
   public get<T, R = AxiosResponse<T>, D = unknown>(url: string, config?: AxiosRequestConfig<D>): Promise<R> {
