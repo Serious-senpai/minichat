@@ -28,6 +28,7 @@ async function fetchHistory(): Promise<void> {
 
     if (older.length === 0) {
       noMoreMessages = true;
+      return;
     }
 
     history.value.push(...older);

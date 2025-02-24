@@ -15,13 +15,18 @@ class AccountToken {
 }
 
 class Client {
-  private static readonly _HTTP_URL = "http://" + import.meta.env.VITE_APP_BASE_API_URL;
-  private static readonly _WS_URL = "ws://" + import.meta.env.VITE_APP_BASE_API_URL;
+  private static readonly _HTTP_URL = import.meta.env.VITE_APP_BASE_API_URL;
+  private static readonly _WS_URL = import.meta.env.VITE_APP_BASE_API_URL;
   private static readonly _http = axios.create(
     {
       baseURL: Client._HTTP_URL,
     }
   );
+
+  public constructor() {
+    console.log(`_HTTP_URL: ${Client._HTTP_URL}`);
+    console.log(`_WS_URL: ${Client._WS_URL}`);
+  }
 
   private _user: User | null = null;
   public get user(): User | null {
@@ -112,8 +117,8 @@ class Client {
     return config;
   }
 
-  public websocket(url: string): WebSocket {
-    return new WebSocket(new URL(url, Client._WS_URL));
+  public websocket(path: string): WebSocket {
+    return new WebSocket(Client._WS_URL + path);
   }
 
   public get<T, R = AxiosResponse<T>, D = unknown>(url: string, config?: AxiosRequestConfig<D>): Promise<R> {

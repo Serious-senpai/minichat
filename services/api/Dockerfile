@@ -1,7 +1,7 @@
 # Reference: https://docs.docker.com/reference/dockerfile/
 FROM python:3.12.9-alpine AS builder
 
-RUN apk add bash
+RUN apk --no-cache add bash
 
 # Delay COPY operation as much as possible to avoid cache invalidation: https://stackoverflow.com/a/48553814
 COPY . /app
@@ -13,6 +13,8 @@ WORKDIR /app/services/api
 RUN bash scripts/install.sh && bash scripts/compile.sh
 
 FROM python:3.12.9-alpine AS runner
+
+RUN apk --no-cache add curl
 
 COPY --from=builder /venv /venv
 COPY --from=builder /app /app

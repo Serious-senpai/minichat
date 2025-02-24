@@ -56,6 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?,
     );
 
+    println!("Listening on {}:{}", arguments.host, arguments.port);
     Server::builder()
         .add_service(account_service_server::AccountServiceServer::new(
             services::ApplicationService::new(rabbitmq.clone(), session.clone()).await?,

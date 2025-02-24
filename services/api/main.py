@@ -8,7 +8,6 @@ from pathlib import Path
 import uvicorn
 import uvloop
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
 from src.endpoints import auth, channels
 from src.core import namespace, parse_args
@@ -18,15 +17,10 @@ asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 app = FastAPI(
     title="Minichat API",
     summary="HTTP API for minichat",
+    root_path="/api",
 )
 app.include_router(auth.router)
 app.include_router(channels.router)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 parse_args()
 
 

@@ -81,7 +81,7 @@ services:
       rabbitmq-proxy:
         condition: service_started
     environment:
-      - VITE_APP_BASE_API_URL=localhost:8000
+      - VITE_APP_BASE_API_URL=localhost:8000/api
     ports:
       - "5173:5173" # frontend (vite)
       - "8000:8000" # api (uvicorn)

@@ -42,8 +42,8 @@ export class Channel {
         {
           params: {
             newest: config.newest,
-            beforeId: config.newest ? id : config.beforeId,
-            afterId: config.newest ? config.afterId : id,
+            before_id: config.newest ? id : config.beforeId,
+            after_id: config.newest ? config.afterId : id,
             limit,
           },
         },

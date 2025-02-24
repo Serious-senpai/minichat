@@ -95,26 +95,23 @@ services:
       - data-service
     deploy:
       replicas: 2
+    healthcheck:
+      test: curl http://localhost:8000/docs
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 1s
     # hostname: api-service
-
-  api-proxy:
-    build:
-      context: .
-      dockerfile: services/api-proxy/Dockerfile
-    container_name: api-proxy
-    depends_on:
-      - api-service
-    ports:
-      - "8000:8000"
 
   frontend:
     build:
       args:
-        VITE_APP_BASE_API_URL: localhost:8000
+        VITE_APP_BASE_API_URL: /api
       context: .
       dockerfile: services/frontend/Dockerfile
     container_name: frontend
     depends_on:
-      - api-proxy
+      api-service:
+        condition: service_healthy
     ports:
       - "80:80"

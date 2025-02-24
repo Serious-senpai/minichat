@@ -9,7 +9,7 @@ COPY . /app
 WORKDIR /app/services/data
 RUN rm -rf target && cargo build --release
 
-FROM rust:1.84-slim AS runner
+FROM ubuntu:24.04 AS runner
 
 WORKDIR /app
 COPY --from=builder /app/services/data/target/release/data-service .
