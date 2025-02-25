@@ -96,7 +96,7 @@ if (client.user) {
 </script>
 
 <template>
-  <div class="viewport d-flex vh-100" :class="{ 'show-side-bar': sideBarOpened }">
+  <div class="viewport d-flex overflow-hidden vh-100" :class="{ 'show-side-bar': sideBarOpened }">
     <div class="modal" id="login-modal" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -207,7 +207,7 @@ if (client.user) {
         </div>
       </div>
     </div>
-    <div class="main-area bg-dark bg-gradient flex-grow-1 h-100 z-0">
+    <div class="main-area bg-dark bg-gradient h-100 z-0">
       <div class="appbar bg-black p-1 w-100">
         <button type="button" class="btn d-block d-md-none position-relative start-0 top-50 translate-middle-y" @click="sideBarOpened = !sideBarOpened">
           <span class="d-block material-icons-outlined text-white">menu</span>
@@ -247,6 +247,7 @@ if (client.user) {
 
 .main-area {
   --appbar-height: 60px;
+  width: calc(100% - var(--sidebar-width));
 }
 
 .appbar {
