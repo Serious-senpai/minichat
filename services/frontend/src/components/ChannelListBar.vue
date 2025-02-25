@@ -128,14 +128,16 @@ if (client.user) {
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-              <form @submit.prevent="register">
+              <form class="was-validated" @submit.prevent="register">
                 <div class="mb-3">
                   <label for="register-username" class="form-label">Username</label>
-                  <input type="text" class="form-control" id="register-username" v-model="authForm.username">
+                  <input type="text" class="form-control" id="register-username" required v-model="authForm.username">
+                  <div class="invalid-feedback">Username must not be empty</div>
                 </div>
                 <div class="mb-3">
                   <label for="register-password" class="form-label">Password</label>
-                  <input type="password" class="form-control" id="register-password" v-model="authForm.password">
+                  <input type="password" class="form-control" id="register-password" required v-model="authForm.password">
+                  <div class="invalid-feedback">Password must not be empty</div>
                 </div>
                 <button type="submit" class="btn btn-primary" @click.prevent="register">Register</button>
               </form>

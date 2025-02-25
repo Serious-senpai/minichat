@@ -125,14 +125,20 @@ impl account_service_server::AccountService for super::ApplicationService {
         &self,
         request: tonic::Request<p_authorization::PAuthInfo>,
     ) -> Result<tonic::Response<p_status::PStatus>, tonic::Status> {
-        let message = request.into_inner();
+        let request = request.into_inner();
+        if request.username.is_empty() || request.password.is_empty() {
+            return Err(tonic::Status::invalid_argument(
+                "Username and password must not be empty",
+            ));
+        }
+
         let statements = _STATEMENTS
             .get_or_try_init(|| _prepare(self))
             .await
             .map_err(super::ApplicationService::error)?;
 
         let id = self.generate_id();
-        let hashed_password = self.hash(&message.password);
+        let hashed_password = self.hash(&request.password);
         let hashed_password = &hashed_password;
 
         let success = Ok::<tonic::Response<p_status::PStatus>, tonic::Status>(
@@ -146,7 +152,7 @@ impl account_service_server::AccountService for super::ApplicationService {
             self,
             &id,
             &statements.create1,
-            &message.username,
+            &request.username,
             hashed_password,
         )
         .await?
@@ -156,7 +162,7 @@ impl account_service_server::AccountService for super::ApplicationService {
                 self,
                 &id,
                 &statements.create2,
-                &message.username,
+                &request.username,
                 hashed_password,
             )
             .await?
@@ -172,7 +178,7 @@ impl account_service_server::AccountService for super::ApplicationService {
                         self,
                         &id,
                         &statements.create2,
-                        &message.username,
+                        &request.username,
                         hashed_password,
                     )
                     .await?
@@ -186,7 +192,7 @@ impl account_service_server::AccountService for super::ApplicationService {
                 // At this point, the ID inserted to the second table is guaranteed to be unique.
                 // We now update the first table.
                 self.session
-                    .execute_unpaged(&statements.create3, (id, &message.username))
+                    .execute_unpaged(&statements.create3, (id, &request.username))
                     .await
                     .map_err(super::ApplicationService::error)?;
                 success
@@ -201,7 +207,7 @@ impl account_service_server::AccountService for super::ApplicationService {
         &self,
         request: tonic::Request<p_authorization::PAuthInfo>,
     ) -> Result<tonic::Response<p_users::PUser>, tonic::Status> {
-        let message = request.into_inner();
+        let request = request.into_inner();
         let statements = _STATEMENTS
             .get_or_try_init(|| _prepare(self))
             .await
@@ -209,7 +215,7 @@ impl account_service_server::AccountService for super::ApplicationService {
 
         let row = self
             .session
-            .execute_unpaged(&statements.login, (&message.username,))
+            .execute_unpaged(&statements.login, (&request.username,))
             .await
             .map_err(super::ApplicationService::error)?
             .into_rows_result()
@@ -217,7 +223,7 @@ impl account_service_server::AccountService for super::ApplicationService {
             .single_row::<_AccountRow>()
             .map_err(|_| tonic::Status::unauthenticated("Invalid credentials"))?;
 
-        if self.verify(&message.password, &row.hashed_password) {
+        if self.verify(&request.password, &row.hashed_password) {
             Ok(tonic::Response::new(p_users::PUser {
                 id: row.id,
                 username: row.username,
