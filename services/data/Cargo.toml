@@ -8,7 +8,7 @@ bcrypt = "0.17.0"
 chrono = "0.4.39"
 clap = { version = "4.5.31", features = ["derive"] }
 lapin = "2.5.0"
-prost = "0.13.4"
+prost = "0.13.5"
 rand = "0.9.0"
 scylla = "0.15.1"
 serde = { version = "1.0.218", features = ["std", "derive"] }
