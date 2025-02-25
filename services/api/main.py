@@ -8,6 +8,7 @@ from pathlib import Path
 import uvicorn
 import uvloop
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from src.endpoints import auth, channels
 from src.core import namespace, parse_args
@@ -21,7 +22,16 @@ app = FastAPI(
 )
 app.include_router(auth.router)
 app.include_router(channels.router)
+
 parse_args()
+if namespace.cors:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ class __Namespace(argparse.Namespace):
         log_level: str
         data_service: str
         amqp_host: str
+        cors: bool
 
 
 namespace = __Namespace()
@@ -28,6 +29,7 @@ __parser.add_argument("--workers", type=int, required=False, help="The number of
 __parser.add_argument("--log-level", type=str, default="debug", help="The log level for the application")
 __parser.add_argument("--data-service", type=str, default="localhost:16000", help="The URL to the data service to pass to `grpc.aio.insecure_channel`")
 __parser.add_argument("--amqp-host", type=str, default="amqp://guest:guest@rabbitmq-proxy:5672", help="The URL to RabbitMQ to pass to `aio_pika.connect_robust`")
+__parser.add_argument("--cors", action="store_true", help="Enable CORS for the HTTP server")
 
 
 def parse_args() -> None:

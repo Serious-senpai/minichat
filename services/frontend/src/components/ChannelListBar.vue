@@ -214,9 +214,9 @@ if (client.user) {
         </button>
       </div>
       <div class="content w-100" @click="sideBarOpened = false">
-        <slot>
+        <slot :loggedIn="authState === AuthState.LoggedIn">
           <div class="position-relative start-50 w-100 top-50 translate-middle">
-            <img src="@/assets/mikucry.png" alt="mikucry" class="mw-100 opacity-50 p-1 position-relative start-50 translate-middle-x" style="mix-blend-mode: luminosity;">
+            <img src="/mikucry.png" alt="mikucry" class="mw-100 opacity-50 p-1 position-relative start-50 translate-middle-x" style="mix-blend-mode: luminosity;">
             <span class="d-block position-relative text-center text-white">Where am I?</span>
           </div>
         </slot>

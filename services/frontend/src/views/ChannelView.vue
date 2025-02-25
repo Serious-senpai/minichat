@@ -72,16 +72,14 @@ Channel.fetchChannel(parseInt(useRoute().params.id as string)).then(
 </script>
 
 <template>
-  <ChannelListBar>
+  <ChannelListBar v-slot="slotProps">
     <div class="main h-100 w-100">
-      <div class="channel-history d-flex flex-column-reverse overflow-y-scroll px-1 w-100" ref="channel-history"
-        @scroll="scrollHistory">
+      <div class="channel-history d-flex flex-column-reverse overflow-y-scroll px-1 w-100" ref="channel-history" @scroll="scrollHistory">
         <MessageTile v-for="m in history" :author="m.author.username" :content="m.content" :key="m.id" />
       </div>
       <div class="chat-input px-3 py-4 w-100">
         <form @submit.prevent="send">
-          <input type="text" class="d-block position-relative rounded-1 start-50 top-50 translate-middle w-100"
-            placeholder="Message" v-model="input" @submit.prevent="send" />
+          <input type="text" class="d-block position-relative rounded-1 start-50 top-50 translate-middle w-100" :disabled="!slotProps.loggedIn" :placeholder="slotProps.loggedIn ? `Message` : `Please login first`" v-model="input" @submit.prevent="send" />
         </form>
       </div>
     </div>
