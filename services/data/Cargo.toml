@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 bcrypt = "0.17.0"
 chrono = "0.4.39"
-clap = { version = "4.5.28", features = ["derive"] }
+clap = { version = "4.5.31", features = ["derive"] }
 lapin = "2.5.0"
 prost = "0.13.4"
 rand = "0.9.0"
