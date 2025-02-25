@@ -27,7 +27,7 @@ multidict==6.1.0
 mypy==1.15.0
 mypy-extensions==1.0.0
 pamqp==3.3.0
-propcache==0.2.1
+propcache==0.3.0
 protobuf==5.29.3
 pycodestyle==2.12.1
 pydantic==2.10.6
