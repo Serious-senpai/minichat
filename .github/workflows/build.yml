@@ -14,5 +14,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build production images
+      - name: Build Docker images
         run: docker compose build
+
+      - name: Save Docker images
+        run: |
+          mkdir build
+          docker save -o build/frontend.tar minichat-frontend
+          docker save -o build/api-service.tar minichat-api-service
+          docker save -o build/rabbitmq-proxy.tar minichat-rabbitmq-proxy
+          docker save -o build/custom-rabbitmq.tar custom-rabbitmq
+          docker save -o build/data-service.tar minichat-data-service
+
+      - name: Upload Docker images
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-images
+          path: build
