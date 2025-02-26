@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { Message } from "../api/channels";
 
-defineProps({ message: Message });
+defineProps(
+  {
+    message: {
+      type: Message,
+      required: true,
+    },
+  },
+);
 </script>
 
 <template>

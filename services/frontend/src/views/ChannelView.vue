@@ -83,7 +83,7 @@ onBeforeRouteUpdate(
       state.websocket.close();
     }
 
-    state = new PageState(to.params.id);
+    state = new PageState(to.params.id as string);
   },
 );
 </script>

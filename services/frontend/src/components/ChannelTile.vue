@@ -3,7 +3,14 @@ import { RouterLink } from "vue-router";
 
 import { Channel } from "../api/channels";
 
-defineProps({ channel: Channel });
+defineProps(
+  {
+    channel: {
+      type: Channel,
+      required: true,
+    },
+  },
+);
 </script>
 
 <template>
