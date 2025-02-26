@@ -2,13 +2,13 @@
 FROM node:23.8-alpine AS builder
 
 ARG VITE_APP_BASE_API_URL
-COPY ./services/frontend /app
+COPY . /app
 
-WORKDIR /app
+WORKDIR /app/services/frontend
 RUN npm install
 RUN npm run build
 
 FROM nginx:1.27.4-alpine AS runner
 
 COPY services/frontend/nginx.conf /etc/nginx/nginx.conf
-COPY --from=builder /app/dist /app
+COPY --from=builder /app/services/frontend/dist /app

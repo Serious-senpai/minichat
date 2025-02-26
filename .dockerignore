@@ -3,3 +3,5 @@
 **/Dockerfile
 
 services/data/target
+services/frontend/dist
+services/frontend/node_modules
