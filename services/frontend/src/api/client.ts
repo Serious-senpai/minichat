@@ -1,12 +1,12 @@
 import axios from "axios";
 import type { AxiosRequestConfig, AxiosResponse } from "axios";
 
-import { User } from "./users";
-import { Status } from "./status";
+import User from "./users";
+import Status from "./status";
 
 class AccountToken {
-  public access_token: string;
-  public token_type: string;
+  public readonly access_token: string;
+  public readonly token_type: string;
 
   public constructor(access_token: string, token_type: string) {
     this.access_token = access_token;
@@ -23,14 +23,14 @@ class Client {
     }
   );
 
-  public constructor() {
-    console.log(`_HTTP_URL: ${Client._HTTP_URL}`);
-    console.log(`_WS_URL: ${Client._WS_URL}`);
-  }
-
   private _user: User | null = null;
   public get user(): User | null {
     return this._user;
+  }
+
+  public constructor() {
+    console.log(`_HTTP_URL: ${Client._HTTP_URL}`);
+    console.log(`_WS_URL: ${Client._WS_URL}`);
   }
 
   public async login(): Promise<boolean> {

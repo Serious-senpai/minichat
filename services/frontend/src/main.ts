@@ -6,5 +6,7 @@ import { createApp } from "vue";
 
 import router from "./router";
 import App from "./App.vue";
+import { importSetup } from "./api/utils";
 
+importSetup();
 createApp(App).use(router).mount("#app");

@@ -80,10 +80,7 @@ async function createChannel(): Promise<void> {
   queryChannels();
 }
 
-if (channels.value.length === 0) {
-  queryChannels();
-}
-
+queryChannels();
 if (client.user) {
   authState.value = AuthState.LoggedIn;
 } else {
@@ -177,7 +174,7 @@ if (client.user) {
         <RouterLink to="/">
           <img src="@/assets/logo.svg" alt="logo" class="d-block mx-auto mb-3" style="width: 100px;">
         </RouterLink>
-        <ChannelTile v-for="c in channels" :id=c.id :name="c.name" :key="c.id"></ChannelTile>
+        <ChannelTile v-for="c in channels" :channel="Channel.ensure(c)" :key="c.id.toString()"></ChannelTile>
       </div>
       <div class="p-1 w-100">
         <div v-if="authState === AuthState.LoggedIn">
