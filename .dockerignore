@@ -1,7 +1,10 @@
 **/.*
 **/__pycache__
 **/Dockerfile
+**/compose.yml
 
+README.md
+resources/
 services/data/target
 services/frontend/dist
 services/frontend/node_modules
