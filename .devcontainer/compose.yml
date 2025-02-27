@@ -40,16 +40,22 @@ services:
       dockerfile: services/rabbitmq/Dockerfile
     container_name: rabbitmq-1
     hostname: rabbitmq-1
+    ports:
+      - 15672:15672
     <<: *rabbitmq-default
 
   rabbitmq-2:
     container_name: rabbitmq-2
     hostname: rabbitmq-2
+    ports:
+      - 15673:15672
     <<: *rabbitmq-default
 
   rabbitmq-3:
     container_name: rabbitmq-3
     hostname: rabbitmq-3
+    ports:
+      - 15674:15672
     <<: *rabbitmq-default
 
   rabbitmq-proxy:
@@ -66,7 +72,7 @@ services:
         condition: service_healthy
     hostname: rabbitmq-proxy
     ports:
-      - "1936:1936"
+      - 1936:1936
 
   devcontainer:
     build:
@@ -83,8 +89,8 @@ services:
     environment:
       - VITE_APP_BASE_API_URL=http://localhost:8000/api
     ports:
-      - "5173:5173" # frontend (vite)
-      - "8000:8000" # api (uvicorn)
+      - 5173:5173 # frontend (vite)
+      - 8000:8000 # api (uvicorn)
     volumes:
       - ..:/workspaces/minichat
     working_dir: /workspaces/minichat
