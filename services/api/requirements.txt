@@ -28,7 +28,7 @@ mypy==1.15.0
 mypy-extensions==1.0.0
 pamqp==3.3.0
 propcache==0.3.0
-protobuf==5.29.3
+protobuf==6.31.1
 pycodestyle==2.12.1
 pydantic==2.10.6
 pydantic_core==2.27.2
